@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Form - ZAKI TRANSPORTERS</title>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+
+    <!-- Initialize Firebase -->
+    <script>
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #f0f0f0;
+            --primary-color: #4CAF50;
+            --primary-hover: #45a049;
+            --secondary-color: #282c34;
+            --border-color: #555;
+            --modal-bg: rgba(0, 0, 0, 0.4);
+            --modal-content-bg: #282c34;
+            --modal-text-color: #f0f0f0;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        nav {
+            width: 100%;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        nav img {
+            height: 40px;
+        }
+
+        nav h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        form {
+            width: 90%;
+            max-width: 600px;
+            padding: 20px;
+            margin: 20px auto;
+            background-color: var(--secondary-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 5px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 15px;
+            width: 100%;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .form-column {
+            display: flex;
+            flex-direction: column;
+            margin: 10px 0;
+        }
+
+        @media (min-width: 768px) {
+            #reportForm {
+                display: flex;
+                justify-content: space-between;
+            }
+            .form-column {
+                flex: 1;
+                margin: 0 10px;
+            }
+        }
+
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: var(--modal-bg);
+        }
+
+        .modal-content {
+            background-color: var(--modal-content-bg);
+            margin: 15% auto; 
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            width: 80%; 
+            color: var(--modal-text-color);
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <img src="logo.jpg" alt="Oilwell Company Logo">
+        <h1>ZAKI TRANSPORTERS</h1>
+    </nav>
+    
+    <form id="reportForm">
+        <div class="form-column">
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date" required>
+
+            <label for="truckNo">Truck No:</label>
+            <input type="text" id="truckNo" name="truckNo" required>
+
+            <label for="orderNo">Order No:</label>
+            <input type="text" id="orderNo" name="orderNo" required>
+
+            <label for="loadingDepot">Loading Depot:</label>
+            <input type="text" id="loadingDepot" name="loadingDepot" required>
+        </div>
+        <div class="form-column">
+            <label for="customerName">Customer's Name:</label>
+            <input type="text" id="customerName" name="customerName" required>
+
+            <label for="product">Product:</label>
+            <input type="text" id="product" name="product" required>
+
+            <label for="volObs">Vol @OBS:</label>
+            <input type="number" id="volObs" name="volObs" required>
+
+            <label for="vol20">Vol @20:</label>
+            <input type="number" id="vol20" name="vol20" required>
+            <button type="submit">Submit</button>
+        </div>
+    </form>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">×</span>
+            <p>Your session will end soon due to inactivity.</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('reportForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); 
+
+            const db = firebase.firestore(); 
+            const userId = firebase.auth().currentUser.uid; 
+
+            const dateString = document.getElementById('date').value;
+            const truckNo = document.getElementById('truckNo').value;
+            const orderNo = document.getElementById('orderNo').value;
+            const loadingDepot = document.getElementById('loadingDepot').value;
+            const customerName = document.getElementById('customerName').value;
+            const product = document.getElementById('product').value;
+            const volObs = document.getElementById('volObs').value;
+            const vol20 = document.getElementById('vol20').value;
+
+            const date = new Date(dateString);
+
+            try {
+                await db.collection('users').doc(userId).collection('userReports').add({
+                    date: date,
+                    truckNo: truckNo,
+                    orderNo: orderNo,
+                    loadingDepot: loadingDepot,
+                    customerName: customerName,
+                    product: product,
+                    volObs: volObs,
+                    vol20: vol20
+                });
+                console.log("Report saved successfully.");
+                alert("Report saved successfully.");
+                document.getElementById('reportForm').reset();
+            } catch (error) {
+                console.error("Error saving report: ", error);
+            }
+        });
+    </script>
+</body>
+</html>

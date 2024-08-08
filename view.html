@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice Retrieval</title>
+    <link rel="icon" href="logo.jpg" type="image/jpg">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@3.5.23/dist/jspdf.plugin.autotable.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-storage.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.2.7/pdfobject.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .logo {
+            width: 150px;
+        }
+        .company-details {
+            text-align: right;
+        }
+        .company-details p {
+            margin: 5px 0;
+        }
+        h2 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        #search-invoice {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        #invoice-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        #invoice-list li {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #invoice-list li:hover {
+            background-color: #f2f2f2;
+        }
+        #invoice-list li a {
+            text-decoration: none;
+            color: #333;
+            display: block;
+        }
+        #invoice-list li a:hover {
+            color: #4CAF50;
+        }
+        .generate-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 20px;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .generate-btn:hover {
+            background-color: #45a049;
+        }
+        #preview-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #pdf-preview {
+            max-width: 800px;
+            max-height: 600px;
+            display: block; /* Make sure the canvas is visible */
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="logo.jpg" class="logo" alt="Company Logo">
+            <div class="company-details">
+                <p><strong>ZAKI TRANSPORTERS</strong></p>
+            </div>
+        </div>
+        <h2>Previous Invoices</h2>
+        <input type="text" id="search-invoice" placeholder="Search Invoice Number">
+        <ul id="invoice-list"></ul>
+    </div>
+
+    <canvas id="pdf-preview"></canvas>
+    <div id="preview-container"></div>
+
+    <script>
+        // Initialize Firebase
+        var firebaseConfig = {
+            apiKey: "AIzaSyDklv5Sgwiy84_fCOqiQRCiuTBVRZ_2EvY",
+            authDomain: "my-1-wb.firebaseapp.com",
+            projectId: "my-1-wb",
+            storageBucket: "my-1-wb.appspot.com",
+            messagingSenderId: "865633557898",
+            appId: "1:865633557898:web:5e8a848b08d7475054bc73"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        // Function to fetch and display previous invoice numbers
+        function displayPreviousInvoices() {
+            firebase.firestore().collection("invoices").get()
+                .then(function(querySnapshot) {
+                    var invoiceList = document.getElementById('invoice-list');
+                    invoiceList.innerHTML = ''; // Clear previous list
+
+                    querySnapshot.forEach(function(doc) {
+                        var invoiceNumber = doc.id;
+                        var listItem = document.createElement('li');
+                        listItem.innerHTML = `<a href="#" onclick="retrieveInvoice('${invoiceNumber}')">${invoiceNumber}</a>`;
+                        invoiceList.appendChild(listItem);
+                    });
+                })
+                .catch(function(error) {
+                    console.error("Error fetching invoices: ", error);
+                });
+        }
+
+        function retrieveInvoice(invoiceNumber) {
+            firebase.firestore().collection("invoices").doc(invoiceNumber).get()
+                .then(function(doc) {
+                    if (doc.exists) {
+                        var invoiceData = doc.data();
+                        var seller = invoiceData.seller || 'N/A';
+                        var buyer = invoiceData.buyer || 'N/A';
+                        var date = invoiceData.date || 'N/A'; // Retrieve the date
+                        var total = calculateTotal(invoiceData);
+                        generatePDF(invoiceNumber, seller, buyer, total, date, invoiceData); // Pass the date to generatePDF
+                    } else {
+                        alert("Invoice not found.");
+                    }
+                })
+                .catch(function(error) {
+                    console.error("Error retrieving invoice: ", error);
+                });
+        }
+
+        function generatePDF(invoiceNumber, seller, buyer, total, date, invoiceData) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Image for logo
+            var img = new Image();
+            img.src = 'logo.jpg'; 
+
+            // Generate PDF content
+            doc.addImage(img, 'JPEG', 15, 5, 50, 50); 
+
+            doc.setFontSize(12);
+            doc.text('Invoice Number: ' + invoiceNumber, 10, 70);
+            doc.text('Date: ' + date, 150, 70); // Add the date to the PDF
+            doc.setTextColor(0, 128, 0);
+            doc.text('Seller: ' + seller, 10, 80);
+            doc.setTextColor(0, 0, 255);
+            doc.text('Buyer: ' + buyer, 150, 80);
+            doc.setTextColor(0, 0, 0);
+        
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 200);
+    doc.text('OILWELL INVESTMENT LIMITED', 150, 10);
+    doc.text('UGANDA ROAD', 150, 20);
+    doc.text('PO BOX 10759-30100', 150, 30);
+    doc.text('ELDORET', 150, 40);
+    doc.text('Email: oilwellinvestment@gmail.com', 150, 50);
+    doc.setTextColor(0, 0, 0);
+
+    doc.setFontSize(12);
+    doc.text('Invoice Number: ' + invoiceNumber, 10, 70);
+    doc.line(10, 72, 200, 72);
+
+    doc.setTextColor(0, 128, 0);
+    doc.text('Seller: ' + seller, 10, 80);
+    doc.line(10, 82, 200, 82);
+
+    doc.setTextColor(0, 0, 255);
+    doc.text('Buyer: ' + buyer, 150, 80);
+    doc.line(150, 82, 200, 82); 
+
+    doc.setTextColor(0, 0, 0); 
+
+    // Get the data for the table, ensuring we skip over the 'seller' and 'buyer' fields
+    var tableData = [];
+    var index = 1;
+    for (var key in invoiceData) {
+        if (invoiceData.hasOwnProperty(key) && key !== 'seller' && key !== 'buyer') {
+            var rowData = [
+                index,
+                invoiceData[key].truckNo || 'N/A',
+                invoiceData[key].description || 'N/A',
+                invoiceData[key].amount || 'N/A',
+                invoiceData[key].loadingCompany || 'N/A',
+                invoiceData[key].depot || 'N/A'
+            ];
+            tableData.push(rowData);
+            index++; // Increment the index for the next row
+        }
+    }
+
+    // Generate the table in the PDF
+    doc.autoTable({
+        head: [['Index', 'Truck No', 'Description', 'Amount', 'Loading Company', 'Depot']],
+        body: tableData,
+        startY: 90,
+        styles: {
+        lineWidth: 0.5,
+        lineColor: [0, 0, 0]
+        }
+    });
+
+    doc.setFillColor(0, 255, 0); 
+    doc.rect(10, doc.autoTable.previous.finalY + 10, 200, 10, 'F'); 
+    doc.text('Total: ' + total, 10, doc.autoTable.previous.finalY + 18); 
+
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.text("Bank Details", 10, 20); 
+    doc.setFontSize(12);
+    doc.setTextColor(30, 144, 255); 
+
+    var bankDetails = [
+        'Oilwell Investment Limited',
+        'KCB BANK',
+        'KCBLKENX', 
+        '1206961635',
+        'ELDORET BRANCH'
+    ];
+
+    var startY = 40; 
+    for (var i = 0; i < bankDetails.length; i++) {
+        doc.text(bankDetails[i], 20, startY + i * 10); 
+    }
+
+    // Generate PDF as Blob
+    var pdfBlob = doc.output('blob');
+
+    // Create an object URL from the Blob
+    var pdfUrl = URL.createObjectURL(pdfBlob);
+
+    // Open the PDF in a new browser tab
+    window.open(pdfUrl);
+
+    // Remove previous download link if it exists
+    var oldDownloadLink = document.getElementById('download-link');
+    if (oldDownloadLink) {
+        oldDownloadLink.parentNode.removeChild(oldDownloadLink);
+    }
+
+    // Create download link
+    var downloadLink = document.createElement('a');
+    downloadLink.id = 'download-link';
+    downloadLink.textContent = 'Download PDF';
+    downloadLink.href = pdfUrl;
+    downloadLink.download = 'invoice_' + invoiceNumber + '.pdf';
+
+    // Append the download link next to the search input
+    var searchInput = document.getElementById('search-invoice');
+    searchInput.parentNode.insertBefore(downloadLink, searchInput.nextSibling);
+}
+        function calculateTotal(invoiceData) {
+            let total = 0;
+            for (let index in invoiceData) {
+                if (invoiceData.hasOwnProperty(index)) {
+                    if (invoiceData[index].amount) {
+                        let amountValue = parseFloat(invoiceData[index].amount.replace('$', ''));
+                        if (!isNaN(amountValue)) {
+                            total += amountValue;
+                        } else {
+                            console.warn("Invalid amount value:", invoiceData[index].amount);
+                        }
+                    }
+                }
+            }
+            return total.toFixed(2);
+        }
+
+        // Call displayPreviousInvoices when the page loads
+        displayPreviousInvoices();
+    </script>
+</body>
+</html>

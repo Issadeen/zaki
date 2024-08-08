@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Invoice Generator</title>
+    <link rel="icon" href="logo.jpg" type="image/jpg">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@3.5.23/dist/jspdf.plugin.autotable.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-storage.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .logo {
+            width: 200px;
+            margin-bottom: 20px;
+        }
+        .company-details, .invoice-details {
+            width: 100%;
+            float: left;
+        }
+        .invoice-details {
+            padding-left: 20px;
+        }
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+        .invoice-table th, .invoice-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+            word-wrap: break-word;
+        }
+        .invoice-table th {
+            background-color: #f2f2f2;
+        }
+        .invoice-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .invoice-table tbody tr:hover {
+            background-color: #f2f2f2;
+        }
+        .invoice-details label {
+            font-weight: bold;
+        }
+        .invoice-details input[type="text"] {
+            width: calc(100% - 10px);
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        .generate-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .generate-btn:hover {
+            background-color: #45a049;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .company-details {
+            position: relative;
+            text-align: right;
+        }
+
+
+        /* Set a smaller width for the "Index" column */
+        .index-column {
+            width: 5%; /* Adjust this value as needed */
+        }
+
+        /* Set the width of the other columns to evenly divide the remaining space */
+        .invoice-table th:not(.index-column),
+        .invoice-table td:not(.index-column) {
+            width: -.83%; /* (100% - 5%) divided by 6 columns */
+        }
+
+        /* Set the width of the input fields */
+        .invoice-details input[type="text"] {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="logo.jpg" class="logo" alt="Company Logo">
+        <div class="company-details">
+            <p>ZAKI TRANSPORTERS</p>
+        </div>
+    </div>
+<script>
+    // Initialize Firebase
+    var firebaseConfig = {
+        apiKey: "AIzaSyDklv5Sgwiy84_fCOqiQRCiuTBVRZ_2EvY",
+        authDomain: "my-1-wb.firebaseapp.com",
+        projectId: "my-1-wb",
+        storageBucket: "my-1-wb.appspot.com",
+        messagingSenderId: "865633557898",
+        appId: "1:865633557898:web:5e8a848b08d7475054bc73"
+    };
+    firebase.initializeApp(firebaseConfig);
+</script>
+<div class="invoice-details">
+    <input type="text" id="invoice-date" name="invoice-date" value="" readonly>
+    <label for="invoice-num">Invoice Number:</label><br>
+    <input type="text" id="invoice-num" name="invoice-num" readonly><br>
+    <label for="seller">Seller:</label><br>
+    <input type="text" id="seller" name="seller"><br>
+    <label for="buyer">Buyer:</label><br>
+    <input type="text" id="buyer" name="buyer"><br>
+    <div class="invoice-table-container">
+        <table id="invoice-table" class="invoice-table">
+            <thead>
+                <tr>
+                    <!-- Add a specific class to the "Index" column -->
+                    <th class="index-column">Index</th>
+                    <th>Truck No</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Loading Company</th>
+                    <th>Depot</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="truck-rows">
+                <!-- Rows will be added here by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+    <label for="total">Total:</label><br>
+    <input type="text" id="total" name="total" readonly><br>
+    <button onclick="addTruckRow(prompt('Enter truck number'))">Add Truck</button>
+    <button class="generate-invoice-btn" onclick="generateInvoice()">Generate Invoice</button>
+</div>
+
+<!-- Your HTML content -->
+
+<!-- JavaScript content -->
+<script>
+// function to get current date
+function getCurrentDate() {
+    var date = new Date();
+    var day = date.getDate();
+    var month = date.getMonth() + 1;
+    var year = date.getFullYear();
+    return day + '/' + month + '/' + year;
+}
+var currentDate = getCurrentDate(); // Call the function and assign its return value to currentDate
+document.getElementById("invoice-date").value = currentDate; 
+
+// function to format amount
+function formatAmount(input) {
+    var value = parseFloat(input.value.replace(/[^0-9.-]+/g,"")); // Strip out non-numeric characters
+    if (!isNaN(value)) {
+        input.dataset.value = value; // Store the numeric value in a data attribute
+        input.value = '$' + value.toFixed(2).toLocaleString();
+    }
+}
+
+function calculateTotal() {
+    var total = 0;
+    var inputs = document.querySelectorAll('#truck-rows input[name^="amount"]');
+    inputs.forEach(function(input) {
+        var value = parseFloat(input.value.replace(/[^0-9.-]+/g,"")); // Use the numeric value from the input
+        if (!isNaN(value)) {
+            total += value;
+        }
+    });
+    document.getElementById('total').value = '$' + total.toFixed(2).toLocaleString();
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    // Auto-generate invoice number
+    var invoiceNumInput = document.getElementById('invoice-num');
+    invoiceNumInput.value = generateInvoiceNumber();
+
+    // Fetch loaded trucks from Firestore
+    firebase.firestore().collection('selectedTrucks').where('loaded', '==', true).get()
+        .then(function(querySnapshot) {
+            querySnapshot.forEach(function(doc) {
+                var truckNo = doc.id.replace('_', '/'); // Convert back to original format
+                addTruckRow(truckNo);
+            });
+        })
+        .catch(function(error) {
+            console.log("Error getting loaded trucks: ", error);
+        });
+});
+
+// Call generateInvoiceNumber when the page is loaded
+window.addEventListener('load', async function() {
+    try {
+        var invoiceNumber = await generateInvoiceNumber();
+        console.log("Generated Invoice Number:", invoiceNumber);
+        // Set the value of the input field to the generated invoice number
+        document.getElementById('invoice-num').value = invoiceNumber;
+    } catch (error) {
+        console.error("Error generating invoice number: ", error);
+    }
+});
+
+
+async function generateInvoiceNumber() {
+    // Get the last generated invoice number from Firestore
+    try {
+        var lastInvoiceNumber = await getLastInvoiceNumber();
+        // If no previous invoice number exists, start with OIL000033
+        if (!lastInvoiceNumber) {
+            return 'OIL000033';
+        } else {
+            // Increment the last invoice number and return
+            let lastNumber = parseInt(lastInvoiceNumber.substring(3)); // Extract the number part
+            let nextNumber = lastNumber + 1;
+            return 'OIL' + nextNumber.toString().padStart(6, '0'); // Pad with zeros to maintain the format
+        }
+    } catch (error) {
+        throw error;
+    }
+}
+
+function getLastInvoiceNumber() {
+    // Get the last generated invoice number from Firestore
+    return firebase.firestore().collection('invoiceNumbers').doc('lastInvoiceNumber').get()
+        .then(doc => {
+            if (doc.exists) {
+                return doc.data().number;
+            } else {
+                return null;
+            }
+        }).catch(error => {
+            throw error;
+        });
+}
+
+// Define the addTruckRow function
+function addTruckRow(truckNo) {
+    var tbody = document.getElementById('truck-rows');
+    var index = tbody.children.length + 1;
+
+    var tr = document.createElement('tr');
+    tr.setAttribute('data-truck', truckNo); // Set data-truck attribute to identify the row
+    tr.innerHTML = `
+        <td>${index}</td>
+        <td>${truckNo}</td>
+        <td><input type="text" id="description${index}" name="description${index}" placeholder="DESCRIPTION" oninput="this.value = this.value.toUpperCase()"></td>
+        <td><input type="text" id="amount${index}" name="amount${index}" placeholder="AMOUNT" oninput="calculateTotal()" onblur="formatAmount(this)"></td>
+        <td><input type="text" id="loadingCompany${index}" name="loadingCompany${index}" placeholder="LOADING COMPANY" oninput="this.value = this.value.toUpperCase()"></td>
+        <td><input type="text" id="depot${index}" name="depot${index}" placeholder="DEPOT" oninput="this.value = this.value.toUpperCase()"></td>
+        <td>
+            <button class="remove-truck-btn" onclick="removeTruckRow(this)">Remove</button>
+            <button class="clear-loaded-btn" onclick="clearTruckAsLoaded('${truckNo}')">Clear Loaded</button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+}
+
+// clearing..
+
+function removeTruckRow(button) {
+    var row = button.closest('tr');
+    row.parentNode.removeChild(row);
+    calculateTotal();
+}
+
+function clearTruckAsLoaded(truckNo) {
+    // Update Firestore to mark the truck as unloaded and unqueued
+    var docId = truckNo.replace('/', '_');
+    var selectedTrucksRef = firebase.firestore().collection('selectedTrucks');
+
+    selectedTrucksRef.doc(docId).update({
+        loaded: false,
+        queued: false // Clear queued status as well
+    })
+    .then(function() {
+        console.log("Truck marked as unloaded and unqueued successfully");
+
+        // Remove the truck document from the selected trucks collection
+        selectedTrucksRef.doc(docId).delete() // Use docId instead of truckNo
+        .then(function() {
+            console.log("Truck removed from selected list successfully");
+
+            // Remove the truck row from the table (if it exists)
+            var row = document.querySelector(`#truck-rows tr[data-truck="${truckNo}"]`);
+            if (row) {
+                row.parentNode.removeChild(row);
+            }
+        })
+        .catch(function(error) {
+            console.error("Error removing truck from selected list: ", error);
+        });
+    })
+    .catch(function(error) {
+        console.error("Error marking truck as unloaded and unqueued: ", error);
+    });
+}
+
+function getInvoiceData() {
+    var truckRows = document.querySelectorAll("#truck-rows tr");
+    var invoiceData = {}; // Change to object
+
+    truckRows.forEach(function(row) {
+        var truckNo = row.getAttribute("data-truck");
+        var index = row.querySelector("td:first-child").textContent;
+        var description = document.getElementById(`description${index}`).value;
+        var amount = document.getElementById(`amount${index}`).value;
+        var loadingCompany = document.getElementById(`loadingCompany${index}`).value;
+        var depot = document.getElementById(`depot${index}`).value;
+
+        // Add each invoice entry to the invoiceData object
+        invoiceData[index] = {
+            truckNo: truckNo,
+            description: description,
+            amount: amount,
+            loadingCompany: loadingCompany,
+            depot: depot
+        };
+    });
+
+    return invoiceData;
+}
+
+
+async function generateInvoice() {
+    var confirmation = confirm("Are you sure you want to generate the invoice? This will save the data and clear all loaded trucks.");
+    if (confirmation) {
+        try {
+            // Generate invoice number
+            var invoiceNumber = await generateInvoiceNumber();
+
+            // Get invoice data
+            var invoiceData = getInvoiceData(); // Define this function to retrieve the invoice data
+
+            // Save data and clear loaded trucks
+            saveInvoiceDataAndClearTrucks(invoiceNumber, invoiceData);
+        } catch (error) {
+            console.error("Error generating invoice number: ", error);
+        }
+    }
+}
+
+function updateLastInvoiceNumber(newInvoiceNumber) {
+    // Update the last generated invoice number in Firestore
+    firebase.firestore().collection('invoiceNumbers').doc('lastInvoiceNumber').set({
+        number: newInvoiceNumber
+    })
+    .then(function() {
+        console.log("Last invoice number updated successfully");
+    })
+    .catch(function(error) {
+        console.error("Error updating last invoice number: ", error);
+    });
+}
+
+
+function saveInvoiceDataAndClearTrucks(invoiceNumber, invoiceData) {
+    // Clear loaded trucks from Firestore
+    firebase.firestore().collection('selectedTrucks').where('loaded', '==', true).get()
+        .then(function(querySnapshot) {
+            querySnapshot.forEach(function(doc) {
+                var docId = doc.id;
+                doc.ref.update({
+                    loaded: false,
+                    queued: false // Clear queued status as well
+                })
+                .then(function() {
+                    console.log("Truck marked as unloaded and unqueued successfully");
+
+                    // Remove the truck document from the selected trucks collection
+                    doc.ref.delete()
+                    .then(function() {
+                        console.log("Truck removed from selected list successfully");
+                    })
+                    .catch(function(error) {
+                        console.error("Error removing truck from selected list: ", error);
+                    });
+                })
+                .catch(function(error) {
+                    console.error("Error marking truck as unloaded and unqueued: ", error);
+                });
+            });
+        })
+        .catch(function(error) {
+            console.log("Error getting loaded trucks: ", error);
+        });
+
+    // Get the buyer and seller from the input fields
+    var seller = document.getElementById('seller').value;
+    var buyer = document.getElementById('buyer').value;
+    var date = document.getElementById('invoice-date').value;
+
+    // Include the buyer and seller in the invoice data
+    var invoiceDataWithBuyerAndSeller = {
+        ...invoiceData,
+        seller: seller,
+        buyer: buyer,
+        date: date
+    };
+
+    // Save invoice data to Firestore with the generated invoice number as the document ID
+    firebase.firestore().collection("invoices").doc(invoiceNumber).set(invoiceDataWithBuyerAndSeller)
+        .then(function() {
+            console.log("Invoice saved with ID: ", invoiceNumber);
+
+            // Update the last generated invoice number in Firestore
+            updateLastInvoiceNumber(invoiceNumber);
+        })
+        .catch(function(error) {
+            console.error("Error adding invoice: ", error);
+        });
+
+        // Generate PDF invoice
+        generatePDF(invoiceNumber, invoiceData);
+
+
+    // Reload the page after saving data and clearing trucks
+    setTimeout(function() {
+        location.reload();
+    }, 30000); // Reload after 30 seconds (adjust as needed)
+}
+
+// pdf
+    function generatePDF() {
+        var date = document.getElementById('invoice-date').value;
+        var seller = document.getElementById('seller').value;
+        var buyer = document.getElementById('buyer').value;
+        var invoiceNum = document.getElementById('invoice-num').value;
+        var total = document.getElementById('total').value;
+
+        var doc = new jspdf.jsPDF();
+
+        var total = document.getElementById('total').value;
+
+        var doc = new jspdf.jsPDF();
+
+        var img = new Image();
+        img.src = 'logo.jpg';
+        img.onload = function() {
+            doc.addImage(this, 'JPEG', 15, 5, 50, 50);  // Adjusted y-coordinate
+
+            doc.setFontSize(12);
+            var pageWidth = doc.internal.pageSize.getWidth();
+            var dateWidth = doc.getStringUnitWidth('Date: ' + date) * doc.internal.getFontSize() / doc.internal.scaleFactor;
+
+            // Calculate the x-coordinate for the date
+            var dateX = pageWidth - dateWidth - 10; // Subtract 10 for the right margin
+
+            doc.text('Date: ' + date, dateX, 70); // Adjusted y-coordinate to match invoice number
+            doc.text('Invoice Number: ' + invoiceNum, 10, 70);  // Adjusted y-coordinate
+            doc.setTextColor(0, 128, 0); // Set text color to green for seller
+            doc.text('Seller: ' + seller, 10, 80);  // Adjusted x-coordinate and y-coordinate
+            doc.setTextColor(0, 0, 255); // Set text color to blue for buyer
+            doc.text('Buyer: ' + buyer, 150, 80);  // Adjusted y-coordinate
+            doc.setTextColor(0, 0, 0); // Reset text color to black
+
+        
+            // Add company details
+            doc.setFontSize(10); // Reduce font size
+            doc.setTextColor(100, 100, 200); // Set text color to slightly bluish
+            doc.text('OILWELL INVESTMENT LIMITED', 150, 10);  // Adjusted y-coordinate
+            doc.text('UGANDA ROAD', 150, 20);  // Adjusted y-coordinate
+            doc.text('PO BOX 10759-30100', 150, 30);  // Adjusted y-coordinate
+            doc.text('ELDORET', 150, 40);  // Adjusted y-coordinate
+            doc.text('Email: oilwellinvestment@gmail.com', 150, 50);  // Adjusted y-coordinate
+            doc.setTextColor(0, 0, 0); // Reset text color to black
+
+            doc.setFontSize(12);
+            doc.text('Invoice Number: ' + invoiceNum, 10, 70);  // Adjusted y-coordinate
+            doc.line(10, 72, 200, 72); // Add a line under the invoice number
+
+            doc.setTextColor(0, 128, 0); // Set text color to green for seller
+            doc.text('Seller: ' + seller, 10, 80);  // Adjusted x-coordinate and y-coordinate
+            doc.line(10, 82, 200, 82); // Add a line under the seller
+
+            doc.setTextColor(0, 0, 255); // Set text color to blue for buyer
+            doc.text('Buyer: ' + buyer, 150, 80);  // Adjusted y-coordinate
+            doc.line(150, 82, 200, 82); // Add a line under the buyer
+
+            doc.setTextColor(0, 0, 0); // Reset text color to black
+
+            // Create a new table with only the values of the input fields
+    var table = document.createElement('table');
+    var thead = document.getElementById('invoice-table').querySelector('thead').cloneNode(true);
+    thead.querySelector('tr').lastElementChild.remove();
+    var tbody = document.createElement('tbody');
+    table.appendChild(thead);
+    table.appendChild(tbody);
+
+            var rows = document.getElementById('truck-rows').children;
+            for (var i = 0; i < rows.length; i++) {
+                var tr = document.createElement('tr');
+                var cells = rows[i].children;
+                for (var j = 0; j < cells.length - 1; j++) { // Changed from cells.length to cells.length - 1
+                    var td = document.createElement('td');
+                    var input = cells[j].querySelector('input');
+                    if (input) {
+                        td.textContent = input.value;
+                    } else {
+                        td.textContent = cells[j].textContent;
+                    }
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+         
+doc.autoTable({
+    html: table,
+    startY: 90,
+    styles: {
+        lineWidth: 0.5, // Set the width of the lines
+        lineColor: [0, 0, 0] // Set the color of the lines to black
+    },
+    didDrawCell: function(data) {
+        if (data.section === 'body') {
+            doc.line(data.cell.x, data.cell.y, data.cell.x + data.cell.width, data.cell.y); // Top border
+            doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height); // Bottom border
+            doc.line(data.cell.x, data.cell.y, data.cell.x, data.cell.y + data.cell.height); // Left border
+            doc.line(data.cell.x + data.cell.width, data.cell.y, data.cell.x + data.cell.width, data.cell.y + data.cell.height); // Right border
+        }
+    }
+});
+
+doc.setFillColor(0, 255, 0); // Set fill color to green
+doc.rect(10, doc.autoTable.previous.finalY + 10, 200, 10, 'F'); // Draw a rectangle behind the total
+doc.text('Total: $' + total, 10, doc.autoTable.previous.finalY + 18); // Adjust total's position
+
+doc.setFillColor(0, 255, 0); // Set fill color to green
+doc.rect(10, doc.autoTable.previous.finalY + 10, 200, 10, 'F'); // Draw a rectangle behind the total
+doc.text('Total: $' + total, 10, doc.autoTable.previous.finalY + 18); // Adjust total's position
+
+doc.setFontSize(12);
+doc.setFont("helvetica");
+doc.setTextColor(30, 144, 255); // Set the color to 'dodgerblue'
+
+var bankDetailsStartY = doc.autoTable.previous.finalY + 35; // Start the bank details 40 units below the table
+doc.text('Bank Details', 20, bankDetailsStartY - 10); // Print the "Bank Details" title 10 units above the bank details
+
+var bankDetails = ['Oilwell Investment Limited', 'KCB BANK', 'KCBLKENX', '1206961635', 'ELDORET BRANCH'];
+var bankDetailsEndY = bankDetailsStartY; // Define bankDetailsEndY
+
+for (var i = 0; i < bankDetails.length; i++) {
+    // Check if the next line will exceed the page height
+    if (bankDetailsStartY + (i + 1) * 10 > doc.internal.pageSize.height - 20) {
+        doc.addPage();
+        bankDetailsStartY = 20; // Reset the y-coordinate at the top of the new page
+    } 
+
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0); // Set the color to black
+    doc.text(bankDetails[i], 20, bankDetailsStartY + i * 10);
+    bankDetailsEndY = bankDetailsStartY + i * 10; // Update bankDetailsEndY
+}
+
+/// The rest of your code...
+
+// Add the manager's signature
+var managerName = 'Manager: FARHAN JAMA';
+doc.text(managerName, doc.internal.pageSize.width / 2, bankDetailsEndY + 20); // Move the manager's signature to the right
+var lineWidth = Math.min(doc.getStringUnitWidth(managerName) * doc.getFontSize(), doc.internal.pageSize.width / 2);
+doc.line(doc.internal.pageSize.width / 2, bankDetailsEndY + 22, doc.internal.pageSize.width / 2 + lineWidth, bankDetailsEndY + 22); // Move the line under the manager's name to the right
+
+doc.setFont('Helvetica', 'normal');
+doc.save('invoice.pdf');
+        }
+    }
+
+    </script>
+    
+
+</body>
+</html>

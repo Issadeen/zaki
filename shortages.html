@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shortage Analysis - ZAKI TRANSPORTERS</title>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        .container {
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #444;
+            text-align: left;
+        }
+        th {
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Shortage Analysis</h1>
+        <table id="shortageTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Truck No</th>
+                    <th>Product</th>
+                    <th>Vol @20</th>
+                    <th>Vol Offloaded</th>
+                    <th>Shortage</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        // Load data when authenticated
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                loadShortageData(user.uid);
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function loadShortageData(userId) {
+            const tableBody = document.querySelector('#shortageTable tbody');
+            tableBody.innerHTML = '';
+
+            try {
+                const querySnapshot = await db.collection('users').doc(userId).collection('userReports').orderBy('date', 'desc').get();
+                
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${data.date.toDate().toLocaleDateString()}</td>
+                        <td>${data.truckNo}</td>
+                        <td>${data.product}</td>
+                        <td>${data.vol20}</td>
+                        <td>${data.volOffloaded || '-'}</td>
+                        <td>${data.shortage || '-'}</td>
+                        <td>
+                            ${data.volOffloaded ? 
+                                `<button onclick="showTruckDetails('${data.truckNo}')">Details</button>` :
+                                `<button onclick="enterOffloadedVolume('${doc.id}', ${data.vol20})">Offloaded?</button>`
+                            }
+                        </td>
+                    `;
+                });
+            } catch (error) {
+                console.error("Error loading shortage data: ", error);
+            }
+        }
+
+        function enterOffloadedVolume(docId, vol20) {
+            const volOffloaded = prompt("Enter the offloaded volume:");
+            if (volOffloaded !== null && !isNaN(volOffloaded)) {
+                const shortage = vol20 - parseFloat(volOffloaded);
+                updateOffloadedVolume(docId, parseFloat(volOffloaded), shortage);
+            }
+        }
+
+        async function updateOffloadedVolume(docId, volOffloaded, shortage) {
+            try {
+                await db.collection('users').doc(firebase.auth().currentUser.uid).collection('userReports').doc(docId).update({
+                    volOffloaded: volOffloaded,
+                    shortage: shortage
+                });
+                loadShortageData(firebase.auth().currentUser.uid);
+            } catch (error) {
+                console.error("Error updating offloaded volume: ", error);
+            }
+        }
+
+        function showTruckDetails(truckNo) {
+            // Open a new tab with the truck details
+            window.open(`truck-details.html?truckNo=${encodeURIComponent(truckNo)}`, '_blank');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Reports - ZAKI TRANSPORTERS</title>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 0;
+        }
+        nav {
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        nav img {
+            height: 40px;
+        }
+        nav h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table th, table td {
+            padding: 12px 15px;
+            border: 1px solid #444;
+            text-align: left;
+        }
+        table th {
+            background-color: #333;
+            color: #e0e0e0;
+            font-weight: 600;
+        }
+        table tbody tr:nth-child(even) {
+            background-color: #2c2c2c;
+        }
+        table tbody tr:hover {
+            background-color: #3d3d3d;
+        }
+        .loading {
+            text-align: center;
+            font-size: 20px;
+            padding: 50px 0;
+        }
+        #search {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: #333;
+            border: none;
+            border-radius: 5px;
+            color: #e0e0e0;
+        }
+
+        /* Modal styles */
+        .modal-content {
+            background-color: #2c2c2c;
+            color: #e0e0e0; /* Set text color to white */
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(255,255,255,0.1);
+        }
+
+        .modal-content table {
+            color: #e0e0e0; /* Set table text color to white */
+        }
+
+        .modal-content th {
+            color: #e0e0e0; /* Set table header text color to white */
+        }
+
+        .modal-content td {
+            color: #e0e0e0; /* Set table data text color to white */
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #fff;
+            text-decoration: none;
+        }
+
+/* Pagination Controls */
+.pagination-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent background */
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7; /* Slightly invisible */
+    transition: opacity 0.3s ease;
+}
+
+.pagination-controls:hover {
+    opacity: 1; /* Fully visible on hover */
+}
+
+.pagination-controls button {
+    margin: 0 10px;
+}
+
+.pagination-controls span {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff; /* White text color */
+}
+
+
+    </style>
+</head>
+<body>
+    <nav>
+        <img src="logo.jpg" alt="Oilwell Company Logo">
+        <h1>ZAKI TRANSPORTERS</h1>
+    </nav>
+
+    <div class="container">
+        <h2>Loading report</h2>
+        <div class="loading" id="loading">Loading reports...</div>
+
+        <input type="text" id="search" onkeyup="searchReports()" placeholder="Search for reports..">
+        <table id="reportTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Truck No</th>
+                    <th>Order No</th>
+                    <th>Loading Depot</th>
+                    <th>Customer's Name</th>
+                    <th>Product</th>
+                    <th>Vol @OBS</th>
+                    <th>Vol @20</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- Report Info Modal -->
+    <div id="reportInfoModal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="truckNo">Truck No</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p id="totalTrips"></p>
+                    <table id="infoTable" class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Product</th>
+                                <th>Vol20</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- The Modal -->
+    <div id="myModal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Session Timeout</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Your session will end soon due to inactivity.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination Controls -->
+<div class="pagination-controls">
+    <button class="btn btn-secondary" onclick="changeMonth(-1)">&laquo; Previous Month</button>
+    <span id="currentMonth">August 2024</span>
+    <button class="btn btn-secondary" onclick="changeMonth(1)">Next Month &raquo;</button>
+</div>
+
+
+    <script>
+        // Initialize Firebase if not already initialized
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (user) {
+                loadReports(user.uid);
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function loadReports(userId) {
+            const tableBody = document.querySelector('#reportTable tbody');
+            const truckCounts = {};  // Object to store the counts of each truck
+            const truckInfo = {};  // Object to store the info of each truck
+
+            try {
+                const querySnapshot = await db.collection('users').doc(userId).collection('userReports').orderBy('date', 'asc').get();
+                let index = 1;
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const date = data.date.toDate();
+                    const dateString = date.toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                    }).replace(/ /g, '-');
+
+                    const row = document.createElement('tr');
+                    row.setAttribute('data-id', doc.id);
+
+                    row.innerHTML = `
+                        <td>${index++}</td>
+                        <td>${dateString}</td>
+                        <td>${data.truckNo}</td>
+                        <td>${data.orderNo}</td>
+                        <td>${data.loadingDepot}</td>
+                        <td>${data.customerName}</td>
+                        <td>${data.product}</td>
+                        <td>${data.volObs}</td>
+                        <td>${data.vol20}</td>
+                        <td>
+                            <i class="fas fa-info-circle" onclick="showInfo('${data.truckNo}')"></i>
+                            <i class="fas fa-trash" onclick="deleteRow(this)"></i>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+
+                    // Update the count and info for this truck
+                    if (truckCounts[data.truckNo]) {
+                        truckCounts[data.truckNo]++;
+                        truckInfo[data.truckNo].push({date: dateString, product: data.product, vol20: data.vol20});
+                    } else {
+                        truckCounts[data.truckNo] = 1;
+                        truckInfo[data.truckNo] = [{date: dateString, product: data.product, vol20: data.vol20}];
+                    }
+                });
+
+                window.truckInfo = truckInfo;
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('reportTable').style.display = '';
+            } catch (error) {
+                console.error("Error loading reports: ", error);
+                document.getElementById('loading').innerText = 'Failed to load reports.';
+            }
+        }
+
+        function showInfo(truckNo) {
+            const info = window.truckInfo[truckNo];
+            document.getElementById('truckNo').innerText = 'Truck No: ' + truckNo;
+            document.getElementById('totalTrips').innerText = 'Total Trips: ' + info.length;
+            const tableBody = document.querySelector('#infoTable tbody');
+            tableBody.innerHTML = '';  // Clear the table
+            info.forEach((trip) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${trip.date}</td>
+                    <td>${trip.product}</td>
+                    <td>${trip.vol20}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+            $('#reportInfoModal').modal('show');  // Use Bootstrap modal method to show
+        }
+
+        function closeModal() {
+            $('#reportInfoModal').modal('hide');  // Use Bootstrap modal method to hide
+        }
+
+        function deleteRow(icon) {
+            const enteredEmail = prompt("Please enter your email:");
+            const currentUserEmail = firebase.auth().currentUser.email;
+
+            if (enteredEmail === currentUserEmail) {
+                const row = icon.parentNode.parentNode;
+                const docId = row.getAttribute('data-id');
+
+                if (docId) {
+                    db.collection('users').doc(firebase.auth().currentUser.uid).collection('userReports').doc(docId).delete().then(() => {
+                        console.log("Document successfully deleted!");
+                        row.parentNode.removeChild(row);
+                    }).catch((error) => {
+                        console.error("Error removing document: ", error);
+                    });
+                } else {
+                    console.error("No document ID found for deletion.");
+                }
+            } else {
+                alert("Incorrect email. The row will not be deleted.");
+            }
+        }
+
+        function searchReports() {
+            const input = document.getElementById('search');
+            const filter = input.value.toUpperCase();
+            const table = document.getElementById('reportTable');
+            const tr = table.getElementsByTagName('tr');
+
+            for (let i = 0; i < tr.length; i++) {
+                const td = tr[i].getElementsByTagName('td')[2];
+                if (td) {
+                    const textValue = td.textContent || td.innerText;
+                    if (textValue.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = '';
+                    } else {
+                        tr[i].style.display = 'none';
+                    }
+                }
+            }
+        }
+
+// Pagination Controls
+let currentMonth = new Date();
+
+function formatDate(date) {
+    return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    }).replace(/ /g, '-');
+}
+
+function updateMonthDisplay() {
+    const monthDisplay = document.getElementById('currentMonth');
+    monthDisplay.textContent = currentMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+}
+
+async function loadReports(userId) {
+    const tableBody = document.querySelector('#reportTable tbody');
+    const truckCounts = {};  // Object to store the counts of each truck
+    const truckInfo = {};  // Object to store the info of each truck
+    const startDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+    const endDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+
+    try {
+        const querySnapshot = await db.collection('users').doc(userId).collection('userReports')
+            .where('date', '>=', startDate)
+            .where('date', '<=', endDate)
+            .orderBy('date', 'asc')
+            .get();
+
+        tableBody.innerHTML = '';  // Clear the existing rows
+        let index = 1;
+
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const date = data.date.toDate();
+            const dateString = formatDate(date);
+
+            const row = document.createElement('tr');
+            row.setAttribute('data-id', doc.id);
+
+            row.innerHTML = `
+                <td>${index++}</td>
+                <td>${dateString}</td>
+                <td>${data.truckNo}</td>
+                <td>${data.orderNo}</td>
+                <td>${data.loadingDepot}</td>
+                <td>${data.customerName}</td>
+                <td>${data.product}</td>
+                <td>${data.volObs}</td>
+                <td>${data.vol20}</td>
+                <td>
+                    <i class="fas fa-info-circle" onclick="showInfo('${data.truckNo}')"></i>
+                    <i class="fas fa-trash" onclick="deleteRow(this)"></i>
+                </td>
+            `;
+            tableBody.appendChild(row);
+
+            // Update the count and info for this truck
+            if (truckCounts[data.truckNo]) {
+                truckCounts[data.truckNo]++;
+                truckInfo[data.truckNo].push({ date: dateString, product: data.product, vol20: data.vol20 });
+            } else {
+                truckCounts[data.truckNo] = 1;
+                truckInfo[data.truckNo] = [{ date: dateString, product: data.product, vol20: data.vol20 }];
+            }
+        });
+
+        window.truckInfo = truckInfo;
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('reportTable').style.display = '';
+    } catch (error) {
+        console.error("Error loading reports: ", error);
+        document.getElementById('loading').innerText = 'Failed to load reports.';
+    }
+}
+
+function changeMonth(direction) {
+    currentMonth.setMonth(currentMonth.getMonth() + direction);
+    updateMonthDisplay();
+    firebase.auth().onAuthStateChanged(async (user) => {
+        if (user) {
+            loadReports(user.uid);
+        }
+    });
+}
+
+// Initialize the page with the current month's reports
+firebase.auth().onAuthStateChanged(async (user) => {
+    if (user) {
+        updateMonthDisplay();
+        loadReports(user.uid);
+    }
+});
+
+    </script>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</body>
+</html>

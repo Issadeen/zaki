@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
+    <link rel="icon" href="logo.jpg" type="image/jpg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.7/tailwind.min.css">
+    <script src="backbutton.js"></script>
+    <style>
+ 
+                body {
+                    background-image: url('oil.jpg');
+                    background-size: cover;
+                    color: #000;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }
+                .form-group {
+                    margin-bottom: 1rem;
+                }
+                .form-group label {
+                    display: block;
+                    margin-bottom: 0.5rem;
+                    font-size: 1.125rem;
+                }
+                .form-group input {
+                    width: 100%;
+                    padding: 0.5rem;
+                    background-color: #fff;
+                    color: #000;
+                    border-radius: 0.375rem;
+                }
+                .form-group button {
+                    width: 100%;
+                    padding: 0.5rem 1rem;
+                    background-color: #ddd;
+                    color: #000;
+                    border-radius: 0.375rem;
+                    cursor: pointer;
+                }
+                #settings-form {
+        background-color: rgba(255, 255, 255, 0.5); /* 0.5 is the alpha value, adjust it to your liking */
+        /* ... other styles ... */
+    }
+
+ /* The Modal (background) */
+ .modal {
+          display: none; /* Hidden by default */
+          position: fixed; /* Stay in place */
+          z-index: 1; /* Sit on top */
+          left: 0;
+          top: 0;
+          width: 100%; /* Full width */
+          height: 100%; /* Full height */
+          overflow: auto; /* Enable scroll if needed */
+          background-color: rgb(0,0,0); /* Fallback color */
+          background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+/* Modal Content/Box */
+.modal-content {
+  background-color: #180101;
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%; /* Could be more or less, depending on screen size */
+  color: #f9f2f2; /* Set text color to black */
+}
+
+        /* The Close Button */
+        .close {
+          color: #aaa;
+          float: right;
+          font-size: 28px;
+          font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+          color: black;
+          text-decoration: none;
+          cursor: pointer;
+        }
+
+      </style>
+</head>
+<body class="bg-gray-800 text-white">
+    <div class="container mx-auto px-4 py-5">
+        <h1 class="text-4xl font-bold mb-4">Settings</h1>
+        <form id="settings-form" class="bg-gray-700 p-4 rounded-lg">
+            <div class="form-group mb-4">
+                <label for="workId" class="block text-lg">Work ID</label>
+                <input type="text" id="workId" name="workId" class="bg-gray-800 text-white rounded-lg p-2 w-full">
+            </div>
+            <div class="form-group mb-4">
+                <label for="email" class="block text-lg">Email</label>
+                <input type="email" id="email" name="email" class="bg-gray-800 text-white rounded-lg p-2 w-full">
+            </div>
+            <div class="form-group mb-4">
+                <label for="currentPassword" class="block text-lg">Current Password</label>
+                <input type="password" id="currentPassword" name="currentPassword" class="bg-gray-800 text-white rounded-lg p-2 w-full">
+            </div>
+            <div class="form-group mb-4">
+                <label for="password" class="block text-lg">New Password</label>
+                <input type="password" id="password" name="password" class="bg-gray-800 text-white rounded-lg p-2 w-full">
+            </div>
+            <div class="form-group mb-4">
+                <label for="confirmPassword" class="block text-lg">Confirm New Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" class="bg-gray-800 text-white rounded-lg p-2 w-full">
+            </div>
+            <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded-lg w-full">Save Changes</button>
+        </form>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+
+      <!-- The Modal -->
+  <div id="myModal" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <p>Your session will end soon due to inactivity.</p>
+    </div>
+  </div>
+    <script>
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+    </script>
+<script>
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            console.log('User is signed in.');
+
+            firebase.database().ref('users/' + user.uid).once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    console.log('User document exists.');
+
+                    let email = user.email;
+                    let workId = snapshot.val().workId;
+
+                    email = email.replace(/(?<=.).+(?=@)/g, (match) => '*'.repeat(match.length));
+                    workId = workId.slice(0, -3) + '***';
+
+                    document.getElementById('email').value = email;
+                    document.getElementById('workId').value = workId;
+                } else {
+                    console.log('No user document found.');
+                }
+            }).catch((error) => {
+                console.log('Error getting user document:', error);
+            });
+        } else {
+            console.log('No user is signed in.');
+        }
+    });
+
+    // Handle form submission
+    document.getElementById('settings-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        // Get form values
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        // Validate current password
+        const credential = firebase.auth.EmailAuthProvider.credential(
+            firebase.auth().currentUser.email, 
+            currentPassword
+        );
+
+        firebase.auth().currentUser.reauthenticateWithCredential(credential).then(() => {
+            // Current password is correct
+
+            // Validate new password
+            if (newPassword === confirmPassword) {
+                // Change password
+                firebase.auth().currentUser.updatePassword(newPassword).then(() => {
+                    console.log('Password changed successfully');
+                }).catch((error) => {
+                    console.log('Error changing password:', error);
+                });
+            } else {
+                console.log('New passwords do not match');
+            }
+        }).catch((error) => {
+            // Incorrect current password
+            console.log('Incorrect current password:', error);
+            alert('Incorrect current password');
+        });
+    });
+
+    // Get the modal
+var modal = document.getElementById("myModal");
+
+// Get the close button
+var close = document.getElementsByClassName("close")[0];
+
+// When the user clicks on the close button, close the modal
+close.onclick = function() {
+    modal.style.display = "none";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+</script>
+<body>
+</html>

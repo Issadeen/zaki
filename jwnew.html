@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>New Truck Form</title>
+    <!-- Firebase JavaScript SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-firestore.js"></script> 
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <!-- Initialize Firebase -->
+    <script>
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+    </script>
+    <style>
+        /* Common styles for both light and dark themes */
+body {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    font-size: 36px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+/* Light Theme Styles */
+.card {
+    background-color: #fff;
+    color: #333;
+    /* Add other light theme styles as needed */
+}
+
+/* Dark Theme Styles */
+body.dark {
+    background-color: #1a202c;
+    color: #fff;
+}
+
+.card.dark {
+    background-color: #1a202c;
+    color: #fff;
+    /* Add other dark theme styles as needed */
+}
+
+.container.dark {
+    color: #1a202c;
+    /* Add other dark theme styles as needed */
+}
+
+/* Input and Label Styles */
+.card label,
+.card input[type="text"],
+.container label,
+.container input[type="text"] {
+    background-color: #fff; /* Light theme background color for labels and inputs */
+    color: #333; /* Light theme text color for labels and inputs */
+    border-color: #ccc; /* Light theme border color for inputs */
+}
+
+body.dark label,
+body.dark input[type="text"] {
+    background-color: #1a202c; /* Dark theme background color for labels and inputs */
+    color: #fff; /* Dark theme text color for labels and inputs */
+    border-color: #fff; /* Dark theme border color for inputs */
+}
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+
+        body.dark {
+            background-color: #1a202c;
+            color: #fff;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            margin: 20px auto;
+            max-width: 1090px;
+            padding: 20px;
+        }
+
+        .card.dark {
+            background-color: #1a202c;
+            color: #333;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .container.dark {
+            color: #1a202c;
+        }
+
+        .form-group {
+            flex-basis: 100%;
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #1a202c;
+        }
+
+        .form-group input[type="text"] {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            background-color: #fff;
+            color: #fff;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        textarea:focus {
+            color: black;
+        }
+
+        input[type="text"]:not(:focus),
+        input[type="password"]:not(:focus),
+        textarea:not(:focus) {
+            color: #050000;
+        }
+
+        .form-group input[type="text"]:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .form-group input[type="text"]:invalid {
+            border-color: #dc3545;
+        }
+
+        .form-group input[type="text"]:valid {
+            border-color: #28a745;
+        }
+
+        @media (min-width: 990px) {
+            .form-group {
+                flex-basis: calc(50% - 10px);
+            }
+        }
+
+        .submit-button {
+            display: block;
+            margin: 20px auto 0;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .submit-button:hover {
+            background-color: #218838;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin: 20px auto 0;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .back-button:hover {
+            background-color: #0069d9;
+        }
+
+        body.dark label,
+        body.dark input[type="text"] {
+            background-color: #1a202c;
+            color: #fff;
+            border-color: #fff;
+        }
+
+        body.dark h1 {
+            color: #fff;
+        }
+
+        #toggle_button {
+            display: block;
+            margin-top: 20px;
+            margin-left: auto;
+        }
+        .background-text {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            font-size: 10vw; /* Adjust this value to change the size of the text */
+            z-index: -1;
+            color: rgba(0, 0, 0, 0.1); /* Adjust this value to change the color and opacity of the text */
+            background-image: repeating-linear-gradient(
+                -45deg,
+                transparent,
+                transparent 10px,
+                currentColor 10px,
+                currentColor 20px
+            );
+            pointer-events: none;
+        }
+
+ /* The Modal (background) */
+ .modal {
+          display: none; /* Hidden by default */
+          position: fixed; /* Stay in place */
+          z-index: 1; /* Sit on top */
+          left: 0;
+          top: 0;
+          width: 100%; /* Full width */
+          height: 100%; /* Full height */
+          overflow: auto; /* Enable scroll if needed */
+          background-color: rgb(0,0,0); /* Fallback color */
+          background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+/* Modal Content/Box */
+.modal-content {
+  background-color: #180101;
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%; /* Could be more or less, depending on screen size */
+  color: #f9f2f2; /* Set text color to black */
+}
+
+        /* The Close Button */
+        .close {
+          color: #aaa;
+          float: right;
+          font-size: 28px;
+          font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+          color: black;
+          text-decoration: none;
+          cursor: pointer;
+        }
+
+        body.light-theme .modal {
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        body.dark-theme .modal {
+            background-color: rgba(255,255,255,0.4); /* White w/ opacity */
+        }
+
+        body.light-theme .modal-content {
+            background-color: var(--light-background);
+            color: var(--light-text);
+            border: 1px solid var(--light-secondary);
+        }
+
+        body.dark-theme .modal-content {
+            background-color: var(--dark-background);
+            color: var(--dark-text);
+            border: 1px solid var(--dark-secondary);
+        }
+
+        body.light-theme .close {
+            color: var(--light-secondary);
+        }
+
+        body.light-theme .close:hover,
+        body.light-theme .close:focus {
+            color: var(--light-primary);
+        }
+
+        body.dark-theme .close {
+            color: var(--dark-secondary);
+        }
+
+        body.dark-theme .close:hover,
+        body.dark-theme .close:focus {
+            color: var(--dark-primary);
+        }
+
+
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>New Truck Form</h1>
+    <div class="background-text">issaerium-23</div>
+</div>
+<div class="card">
+    <form id="new_truck_form">
+        <div class="container">
+            <div class="form-group">
+                <label for="truck_no">Truck No:</label>
+                <input type="text" id="truck_no" required
+                       oninvalid="this.setCustomValidity('Please enter a valid truck number (e.g. SSD022U/SSD235U)')"
+                       oninput="this.setCustomValidity('')"/>
+            </div>
+            <div class="form-group">
+                <label for="owner">Owner:</label>
+                <input type="text" id="owner" required>
+            </div>
+            <div class="form-group">
+                <label for="transporter">Transporter:</label>
+                <input type="text" id="transporter" required>
+            </div>
+            <div class="form-group">
+                <label for="driver">Driver:</label>
+                <input type="text" id="driver" required>
+            </div>
+
+            <div class="form-group">
+                <label for="ago_comp_1">AGO Comp 1:</label>
+                <input type="text" id="ago_comp_1" pattern="[0-9]+(\.[0-9]+)?" required>
+            </div>
+
+            <div class="form-group">
+                <label for="ago_comp_2">AGO Comp 2:</label>
+                <input type="text" id="ago_comp_2" pattern="[0-9]+(\.[0-9]+)?" required>
+            </div>
+            <!-- Move the form group for AGO 4 after the form group for AGO 3 -->
+            <div class="form-group">
+                <label for="ago_comp_3">AGO Comp 3:</label>
+                <input type="text" id="ago_comp_3" pattern="[0-9]+(\.[0-9]+)?" required>
+            </div>
+            <div class="form-group" id="ago-comp-4-group" style="display: none;">
+                <label for="ago_comp_4">AGO Comp 4:</label>
+                <input type="text" id="ago_comp_4" pattern="[0-9]+(\.[0-9]+)?">
+            </div>
+            <!-- Add more form groups for AGO compartments and hide them initially -->
+            <div class="form-group" id="ago-comp-5-group" style="display: none;">
+                <label for="ago_comp_5">AGO Comp 5:</label>
+                <input type="text" id="ago_comp_5" pattern="[0-9]+(\.[0-9]+)?">
+            </div>
+            <!-- Add more form groups for AGO compartments and hide them initially -->
+            <div class="form-group" id="ago-comp-6-group" style="display: none;">
+                <label for="ago_comp_6">AGO Comp 6:</label>
+                <input type="text" id="ago_comp_6" pattern="[0-9]+(\.[0-9]+)?">
+            </div>
+
+            <div class="form-group">
+                <label for="pms_1">PMS 1:</label>
+                <input type="text" id="pms_1" pattern="[0-9]+(\.[0-9]+)?" required>
+            </div>
+            <div class="form-group">
+                <label for="pms_2">PMS 2:</label>
+                <input type="text" id="pms_2" pattern="[0-9]+(\.[0-9]+)?" required>
+            </div>
+            <!-- Move the form group for PMS 4 after the form group for PMS 3 -->
+            <div class="form-group">
+                <label for="pms_3">PMS 3:</label>
+                <input type="text" id="pms_3" pattern="[0-9]+(\.[0-9]+)?" required>
+            </div>
+            <div class="form-group" id="pms-4-group" style="display: none;">
+                <label for="pms_4">PMS 4:</label>
+                <input type="text" id="pms_4" pattern="[0-9]+(\.[0-9]+)?">
+            </div>
+
+            <!-- Add more form groups for PMS compartments and hide them initially -->
+            <div class="form-group" id="pms-5-group" style="display: none;">
+                <label for="pms_5">PMS 5:</label>
+                <input type="text" id="pms_5" pattern="[0-9]+(\.[0-9]+)?">
+            </div>
+            <!-- Add more form groups for PMS compartments and hide them initially -->
+            <div class="form-group" id="pms-6-group" style="display: none;">
+                <label for="pms_6">PMS 6:</label>
+                <input type="text" id="pms_6" pattern="[0-9]+(\.[0-9]+)?">
+        </div>
+
+            <!-- Add the new form group with a checkbox input -->
+            <div class="form-group">
+                <label for="add-compartments">Add 3 more AGO and PMS Comps:</label>
+                <input type="checkbox" id="add-compartments">
+            </div>
+        </div>
+        <button type="submit" class="submit-button">Submit</button>
+        <!-- Add two new elements to display the totals for AGO and PMS -->
+        <div class="form-group">
+            <label for="ago-total">AGO Total:</label>
+            <input type="text" id="ago-total" readonly>
+        </div>
+        <div class="form-group">
+            <label for="pms-total">PMS Total:</label>
+            <input type="text" id="pms-total" readonly>
+        </div>
+
+        <button type="button" class="back-button" onclick="goBack()">Back</button>
+        <button type="button" id="toggle_button" onclick="toggleTheme()">Toggle Theme</button>
+    </form>
+
+      <!-- The Modal -->
+  <div id="myModal" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content">
+      <span class="close">×</span>
+      <p>Your session will end soon due to inactivity.</p>
+    </div>
+  </div>
+    <script>
+        const form = document.getElementById('new_truck_form');
+        const submitButton = document.querySelector('.submit-button');
+        const addCompartmentsCheckbox = document.getElementById("add-compartments");
+        const agoComp4Group = document.getElementById("ago-comp-4-group");
+        const pms4Group = document.getElementById("pms-4-group");
+        const agoComp4Input = document.getElementById("ago_comp_4");
+        const pms4Input = document.getElementById("pms_4");
+        const agoComp5Group = document.getElementById("ago-comp-5-group");
+        const pms5Group = document.getElementById("pms-5-group");
+        const agoComp5Input = document.getElementById("ago_comp_5");
+        const pms5Input = document.getElementById("pms_5");
+        const agoComp6Group = document.getElementById("ago-comp-6-group");
+        const pms6Group = document.getElementById("pms-6-group");
+        const agoComp6Input = document.getElementById("ago_comp_6");
+        const pms6Input = document.getElementById("pms_6");
+
+addCompartmentsCheckbox.addEventListener("change", function () {
+    if (this.checked) {
+        agoComp4Group.style.display = "block";
+        pms4Group.style.display = "block";
+        agoComp5Group.style.display = "block";
+        pms5Group.style.display = "block";
+        agoComp6Group.style.display = "block";
+        pms6Group.style.display = "block";
+        agoComp4Input.required = true;
+        pms4Input.required = true;
+        agoComp5Input.required = true;
+        pms5Input.required = true;
+        agoComp6Input.required = true;
+        pms6Input.required = true;
+    } else {
+        agoComp4Group.style.display = "none";
+        pms4Group.style.display = "none";
+        agoComp5Group.style.display = "none";
+        pms5Group.style.display = "none";
+        agoComp6Group.style.display = "none";
+        pms6Group.style.display = "none";
+        agoComp4Input.required = false;
+        pms4Input.required = false;
+        agoComp5Input.required = false;
+        pms5Input.required = false;
+        agoComp6Input.required = false;
+        pms6Input.required = false;
+    }
+});
+
+form.addEventListener('submit', async function (event) {
+    // Prevent form submission
+    event.preventDefault();
+
+    // Update the text of the submit button
+    submitButton.textContent = "Submitting...";
+
+    // Check if all required fields have a value
+    const requiredFields = form.querySelectorAll('[required]');
+    let isValid = true;
+
+    requiredFields.forEach(function (field) {
+        // Only validate the AGO 4 and PMS 4 fields if the checkbox is checked
+        if (field === agoComp4Input || field === pms4Input) {
+            if (addCompartmentsCheckbox.checked && !field.value) {
+                isValid = false;
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        } else {
+            if (!field.value) {
+                isValid = false;
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        }
+    });
+
+    // Submit the form if all required fields have a value
+    if (isValid) {
+        // Get the form values
+        var truck_no = document.getElementById('truck_no').value;
+        var owner = document.getElementById('owner').value;
+        var transporter = document.getElementById('transporter').value;
+        var driver = document.getElementById('driver').value;
+        var ago_comp_1 = document.getElementById('ago_comp_1').value;
+        var ago_comp_2 = document.getElementById('ago_comp_2').value;
+        var ago_comp_3 = document.getElementById('ago_comp_3').value;
+        var pms_1 = document.getElementById('pms_1').value;
+        var pms_2 = document.getElementById('pms_2').value;
+        var pms_3 = document.getElementById('pms_3').value;
+
+        // Get the values of the AGO 4 and PMS 4 input fields
+        var ago_comp_4 = document.getElementById('ago_comp_4').value;
+        var pms_4 = document.getElementById('pms_4').value;
+
+        // Get the values of the AGO 5 and PMS 5 input fields
+        var ago_comp_5 = document.getElementById('ago_comp_5').value;
+        var pms_5 = document.getElementById('pms_5').value;
+
+        // GET THE VALUES OF THE AGO 6 AND PMS 6 INPUT FIELDS
+        var ago_comp_6 = document.getElementById('ago_comp_6').value;
+        var pms_6 = document.getElementById('pms_6').value;
+
+        // Get the currently logged-in user's ID
+        var userId = firebase.auth().currentUser.uid;
+
+        // Save the form values to Firestore
+        const db = firebase.firestore();
+        const newTruckRef = db.collection('users').doc(userId).collection('trucks').doc();
+
+        await newTruckRef.set({
+            truck_no: truck_no,
+            owner: owner,
+            transporter: transporter,
+            driver: driver,
+            ago_comp_1: parseFloat(ago_comp_1),
+            ago_comp_2: parseFloat(ago_comp_2),
+            ago_comp_3: parseFloat(ago_comp_3),
+            pms_1: parseFloat(pms_1),
+            pms_2: parseFloat(pms_2),
+            pms_3: parseFloat(pms_3),
+            // Include the values of the AGO 4,5,6 and PMS 4,5,6 input fields
+            ago_comp_4: ago_comp_4 ? parseFloat(ago_comp_4) : null,
+            pms_4: pms_4 ? parseFloat(pms_4) : null,
+            ago_comp_5: ago_comp_5 ? parseFloat(ago_comp_5) : null,
+            pms_5: pms_5 ? parseFloat(pms_5) : null,
+            ago_comp_6: ago_comp_6 ? parseFloat(ago_comp_6) : null,
+            pms_6: pms_6 ? parseFloat(pms_6) : null
+        })
+        .then(() => {
+            // Data saved successfully!
+            alert("Data saved successfully!");
+            // Reset the form
+            document.getElementById("new_truck_form").reset();
+            // Reset the text of the submit button
+            submitButton.textContent = "Submit";
+        })
+        .catch(error => {
+            // The write failed...
+            alert("Data could not be saved. " + error);
+            // Reset the text of the submit button
+            submitButton.textContent = "Submit";
+        });
+    } else {
+        // Reset the text of the submit button
+        submitButton.textContent = "Submit";
+    }
+});
+
+        // Get the input fields for AGO and PMS compartments
+        const agoInputs = Array.from(document.querySelectorAll('[id^="ago_comp_"]'));
+        const pmsInputs = Array.from(document.querySelectorAll('[id^="pms_"]'));
+
+        // Get the input fields for AGO and PMS totals
+        const agoTotalInput = document.getElementById('ago-total');
+        const pmsTotalInput = document.getElementById('pms-total');
+
+        // Add event listeners to the input fields for AGO and PMS compartments
+        agoInputs.forEach(input => {
+            input.addEventListener('input', calculateAgoTotal);
+        });
+        pmsInputs.forEach(input => {
+            input.addEventListener('input', calculatePmsTotal);
+        });
+
+        // Calculate the total for AGO compartments
+        function calculateAgoTotal() {
+            let total = 0;
+            agoInputs.forEach(input => {
+                let value = parseFloat(input.value);
+                if (!isNaN(value)) {
+                    total += value;
+                }
+            });
+            agoTotalInput.value = total.toFixed(2);
+        }
+
+        // Calculate the total for PMS compartments
+        function calculatePmsTotal() {
+            let total = 0;
+            pmsInputs.forEach(input => {
+                let value = parseFloat(input.value);
+                if (!isNaN(value)) {
+                    total += value;
+                }
+            });
+            pmsTotalInput.value = total.toFixed(2);
+        }
+
+        function goBack() {
+            window.location.href = "dashboard.html";
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const cardElements = document.querySelectorAll('.card');
+            const containerElements = document.querySelectorAll('.container');
+            const currentTheme = body.classList.contains('dark') ? 'light' : 'dark';
+
+            body.classList.toggle('dark');
+            cardElements.forEach(function (card) {
+                card.classList.toggle('dark');
+            });
+            containerElements.forEach(function (container) {
+                container.classList.toggle('dark');
+            });
+
+            // Save the current theme to local storage
+            localStorage.setItem('theme', currentTheme);
+        }
+
+       // Get the current theme from local storage
+const storedTheme = localStorage.getItem('theme');
+
+if (storedTheme === 'dark') {
+    // Apply the 'dark' class to the body and elements
+    document.body.classList.add('dark');
+    const cardElements = document.querySelectorAll('.card');
+    const containerElements = document.querySelectorAll('.container');
+    cardElements.forEach(function (card) {
+        card.classList.add('dark');
+    });
+    containerElements.forEach(function (container) {
+        container.classList.add('dark');
+    });
+}
+
+// Get the modal
+var modal = document.getElementById("myModal");
+
+// Get the close button
+var close = document.getElementsByClassName("close")[0];
+
+// When the user clicks on the close button, close the modal
+close.onclick = function() {
+    modal.style.display = "none";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+
+    </script>
+</body>
+</html>

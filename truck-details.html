@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truck Details - ZAKI TRANSPORTERS</title>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        .container {
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #444;
+            text-align: left;
+        }
+        th {
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="truckTitle">Truck Details</h1>
+        <canvas id="shortageChart"></canvas>
+        <table id="truckDetailTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Product</th>
+                    <th>Vol @20</th>
+                    <th>Vol Offloaded</th>
+                    <th>Shortage</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        // Get truck number from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const truckNo = urlParams.get('truckNo');
+
+        // Load data when authenticated
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                loadTruckDetails(user.uid, truckNo);
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function loadTruckDetails(userId, truckNo) {
+            const truckTitle = document.getElementById('truckTitle');
+            const truckDetailTableBody = document.querySelector('#truckDetailTable tbody');
+            truckTitle.textContent = `Truck No: ${truckNo}`;
+            truckDetailTableBody.innerHTML = '';
+
+            try {
+                const querySnapshot = await db.collection('users').doc(userId)
+                    .collection('userReports')
+                    .where('truckNo', '==', truckNo)
+                    .orderBy('date', 'desc')
+                    .limit(30)  // Last 30 trips
+                    .get();
+
+                const shortages = [];
+                const labels = [];
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const row = truckDetailTableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${data.date.toDate().toLocaleDateString()}</td>
+                        <td>${data.product}</td>
+                        <td>${data.vol20}</td>
+                        <td>${data.volOffloaded || '-'}</td>
+                        <td>${data.shortage || '-'}</td>
+                    `;
+
+                    if (data.shortage) {
+                        shortages.push(data.shortage);
+                        labels.push(data.date.toDate().toLocaleDateString());
+                    }
+                });
+
+                createShortageChart(labels.reverse(), shortages.reverse());
+            } catch (error) {
+                console.error("Error loading truck details: ", error);
+            }
+        }
+
+        function createShortageChart(labels, shortages) {
+            const ctx = document.getElementById('shortageChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Shortage',
+                        data: shortages,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

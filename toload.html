@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Selected Trucks</title>
+    <link rel="icon" href="logo.jpg" type="image/jpg">
+
+    <script src="https://kit.fontawesome.com/d00c9b568a.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.3/jspdf.debug.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@3.5.23/dist/jspdf.plugin.autotable.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@3.5.23/dist/jspdf.plugin.autotable.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-storage.js"></script>
+
+    <head>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            th, td {
+                border: 1px solid #ccc;
+                padding: 10px;
+                text-align: left;
+            }
+
+            .header {
+                display: flex;
+                justify-content: center; /* Center the name */
+                align-items: center;
+                margin-bottom: 20px; /* Separate the header from the body */
+                box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); /* Add box shadow */
+            }
+
+            .header img {
+                margin-right: 10px;
+            }
+
+            #remove-button {
+                background-color: #4CAF50; /* Green background */
+                border: none; /* Remove border */
+                color: white; /* White text */
+                padding: 15px 32px; /* Some padding */
+                text-align: center; /* Centered text */
+                text-decoration: none; /* Remove underline */
+                display: inline-block;
+                font-size: 16px;
+                margin: 4px 2px;
+                cursor: pointer; /* Mouse pointer on hover */
+                transition-duration: 0.4s; /* Transition effect */
+                border-radius: 5px; /* Rounded corners */
+            }
+
+            #remove-button:hover {
+                background-color: #45a049; /* Darker green on hover */
+            }
+
+            .modern-button {
+                background-color: #008CBA; /* Blue background */
+                border: none; /* Remove border */
+                color: white; /* White text */
+                padding: 5px 12px; /* Reduced padding */
+                text-align: center; /* Centered text */
+                text-decoration: none; /* Remove underline */
+                display: inline-block;
+                font-size: 14px; /* Reduced font size */
+                margin: 4px 2px;
+                cursor: pointer; /* Mouse pointer on hover */
+                transition-duration: 0.4s; /* Transition effect */
+                border-radius: 5px; /* Rounded corners */
+            }
+
+            .modern-button:hover {
+                background-color: #005f6b; /* Darker blue on hover */
+            }
+
+            .deselect-checkbox {
+                margin: 0; /* Remove default margin */
+            }
+
+            .truck {
+                text-transform: uppercase; /* Make truck number bold */
+            }
+
+            .driver {
+                text-transform: uppercase; /* Uppercase driver name */
+            }
+
+            .driverId {
+                font-style: italic; /* Italic driver ID */
+            }
+
+            .tel {
+                font-style: italic; /* Make telephone number bold */
+            }
+            .logo {
+                width: 100px;
+                margin-bottom: 0px;
+                position: absolute; /* Position the logo absolutely */
+                left: 0; /* Position the logo at the leftmost part of the page */
+            }
+            
+            .disabled-button {
+        background-color: #cccccc;
+        color: #666666;
+        cursor: not-allowed;
+    }
+
+    #queued-trucks-counter-container {
+        position: absolute;
+        right: 0;
+        top: 0;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+    }
+    
+    #queued-trucks-label {
+        font-weight: bold;
+        margin-right: 5px;
+    }
+    
+    #queued-trucks-counter {
+        font-weight: bold;
+        color: #dc3545;
+    }
+
+    .header {
+        position: relative;
+    }
+
+    .pdf-icon-container {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+    }
+
+    #pdf-icon {
+        color: #dc3545; /* Change the color of the icon */
+        font-size: 24px; /* Increase the size of the icon */
+        padding: 10px; /* Add some padding around the icon */
+        cursor: pointer; /* Change the cursor to a hand when hovering over the icon */
+    }
+
+    #pdf-icon:hover {
+        color: #c82333; /* Change the color of the icon when hovering over it */
+    }
+
+    .queued {
+        background-color: #e0f7fa; /* A slight shade of blue */
+    }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <img src="logo.jpg" class="logo" alt="Company Logo">
+            <h1>Selected Trucks</h1>
+
+            <div id="queued-trucks-counter-container">
+                <span id="queued-trucks-label">Queued Trucks: </span>
+                <span id="queued-trucks-counter"></span>
+            </div>
+
+            <div class="pdf-icon-container">
+                <i class="fas fa-file-pdf" id="pdf-icon"></i>
+            </div>
+        </div>
+        <button id="remove-button">Remove from list</button>
+        <!-- Rest of your code -->
+    </body>
+
+    <table id="truck-list">
+        <thead>
+            <tr>
+                <th>Select</th>
+                <th>#</th>
+                <th>Truck</th>
+                <th>Driver</th>
+                <th>Driver ID</th>
+                <th>Telephone</th>
+                <th>Product</th>
+                <th>V(OBS)</th>
+                <th>Comp</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+
+    <script>
+        // Initialize Firebase
+        var firebaseConfig = {
+            apiKey: "AIzaSyDklv5Sgwiy84_fCOqiQRCiuTBVRZ_2EvY",
+            authDomain: "my-1-wb.firebaseapp.com",
+            projectId: "my-1-wb",
+            storageBucket: "my-1-wb.appspot.com",
+            messagingSenderId: "865633557898",
+            appId: "1:865633557898:web:5e8a848b08d7475054bc73"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        // Get truck list element
+        var truckList = document.querySelector('#truck-list tbody');
+
+        // Retrieve selected trucks from Firestore
+        firebase.firestore().collection('selectedTrucks').get().then(function(querySnapshot) {
+            var index = 1; // Initialize index
+            querySnapshot.forEach(function(doc) {
+                // Extract truck data from the document
+                var truckData = doc.data();
+
+                // Create new table row for each truck
+                var row = document.createElement('tr');
+                row.id = 'row-' + truckData.truck; // Set the id of the row
+
+                // Create a checkbox for deselection
+                var selectCell = document.createElement('td');
+                var checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'deselect-checkbox'; // Adding a class for easier identification
+
+                if (truckData && truckData.hasOwnProperty('truck')) {
+                    checkbox.setAttribute('data-truckNo', truckData.truck);
+                } else {
+                    console.error('Truck data is not available or does not contain a truck field');
+                }
+
+                selectCell.appendChild(checkbox);
+                row.appendChild(selectCell);
+
+                // Create a cell for index and append it to the row
+                var indexCell = document.createElement('td');
+                indexCell.textContent = index++; // Increment index after setting the text content
+                row.appendChild(indexCell);
+
+                // Create a cell for each field and append it to the row
+                var truckData = doc.data();
+                var fields = ['truck', 'driver', 'driverId', 'tel', 'product', 'vobs', 'comp'];
+                fields.forEach(function(field) {
+                    var cell = document.createElement('td');
+                    cell.textContent = truckData[field];
+                    cell.className = field; // Add class to cell
+                    row.appendChild(cell);
+                });
+
+                // Create an action cell
+                var actionCell = document.createElement('td');
+                
+                // Create a "Loaded" button
+                var actionButton = document.createElement('button');
+                actionButton.style.display = 'none'; // Initially hide the button
+                actionButton.addEventListener('click', function() {
+                    // Mark truck as loaded
+                    var docId = truckData.truck.replace('/', '_');
+                    firebase.firestore().collection('selectedTrucks').doc(docId).update({
+                        loaded: true
+                    }).then(function() {
+                        // Change the button's text to "Loaded" and disable the button
+                        actionButton.textContent = 'Loaded';
+                        actionButton.disabled = true;
+                    });
+                });
+                actionCell.appendChild(actionButton);
+
+                // Check loaded status when page loads
+                var docId = truckData.truck.replace('/', '_');
+                firebase.firestore().collection('selectedTrucks').doc(docId).get().then(function(doc) {
+                    var loaded = doc.data().loaded;
+
+                    // Set the button's text and disabled state based on the loaded status
+                    actionButton.textContent = loaded ? 'Loaded' : 'Loaded?';
+                    actionButton.disabled = loaded;
+                    actionButton.style.display = 'block'; // Show the button
+                });
+
+                
+                    // Create a "Loaded" button
+                    var actionButton = document.createElement('button');
+                    actionButton.style.display = 'none'; // Initially hide the button
+                    actionButton.addEventListener('click', function() {
+                        // Mark truck as loaded
+                        var docId = truckData.truck.replace('/', '_');
+                        firebase.firestore().collection('selectedTrucks').doc(docId).update({
+                            loaded: true
+                        }).then(function() {
+                            // Change the button's text to "Loaded", disable the button, and grey it out
+                            actionButton.textContent = 'Loaded';
+                            actionButton.disabled = true;
+                            actionButton.classList.add('disabled-button');
+                        });
+                    });
+                    actionCell.appendChild(actionButton);
+
+                    // Check loaded status when page loads
+                    var docId = truckData.truck.replace('/', '_');
+                    firebase.firestore().collection('selectedTrucks').doc(docId).get().then(function(doc) {
+                        var loaded = doc.data().loaded;
+
+                        // Set the button's text, disabled state, and color based on the loaded status
+                        actionButton.textContent = loaded ? 'Loaded' : 'Loaded?';
+                        actionButton.disabled = loaded;
+                        actionButton.style.display = 'block'; // Show the button
+                        if (loaded) {
+                            actionButton.classList.add('disabled-button');
+                        }
+                    });
+                
+
+                // Create a "Queued" button
+                var queueButton = document.createElement('button');
+                queueButton.textContent = 'Queue';
+                queueButton.style.marginRight = '10px'; // Add space to the right of the button
+                queueButton.classList.add('modern-button'); // Add a class for styling
+                queueButton.addEventListener('click', function() {
+                    // Get current queued status
+                    var docId = truckData.truck.replace('/', '_');
+                    firebase.firestore().collection('selectedTrucks').doc(docId).get().then(function(doc) {
+                        var queued = doc.data().queued;
+
+                        // Update queued status
+                        firebase.firestore().collection('selectedTrucks').doc(docId).update({
+                            queued: !queued
+                        }).then(function() {
+                            // Show or hide the "Loaded" button based on the new queued status
+                            actionButton.style.display = !queued ? 'block' : 'none';
+                            // Change the text of the "Queue" button based on the new queued status
+                            queueButton.textContent = !queued ? 'Unqueue' : 'Queue';
+
+                            // Find the checkbox for this row and disable it if the truck is queued
+                            var checkbox = row.querySelector('.deselect-checkbox');
+                            checkbox.disabled = !queued;
+                        });
+                    });
+                });
+                actionCell.appendChild(queueButton);
+
+                // Check queued status when page loads
+                var docId = truckData.truck.replace('/', '_');
+                firebase.firestore().collection('selectedTrucks').doc(docId).get().then(function(doc) {
+                    var queued = doc.data().queued;
+
+                    // Show or hide the "Loaded" button based on the queued status
+                    actionButton.style.display = queued ? 'block' : 'none';
+                    // Set the text of the "Queue" button based on the queued status
+                    queueButton.textContent = queued ? 'Unqueue' : 'Queue';
+
+                    // Find the checkbox for this row and disable it if the truck is queued
+                    var checkbox = row.querySelector('.deselect-checkbox');
+                    checkbox.disabled = queued;
+                });
+                // Check queued status when page loads
+                var docId = truckData.truck.replace('/', '_');
+                firebase.firestore().collection('selectedTrucks').doc(docId).get().then(function(doc) {
+                    var queued = doc.data().queued;
+
+                    // Show or hide the "Loaded" button based on the queued status
+                    actionButton.style.display = queued ? 'block' : 'none';
+                    // Set the text of the "Queue" button based on the queued status
+                    queueButton.textContent = queued ? 'Unqueue' : 'Queue';
+
+                    // Find the checkbox for this row and disable it if the truck is queued
+                    var checkbox = row.querySelector('.deselect-checkbox');
+                    checkbox.disabled = queued;
+
+                    // Apply the 'queued' class to the row if the truck is queued
+                    if (queued) {
+                        row.classList.add('queued');
+                    } else {
+                        row.classList.remove('queued');
+                    }
+                });
+                // Append action cell to the row
+                row.appendChild(actionCell);
+                // Add row to truck list
+                truckList.appendChild(row);
+            });
+        });
+
+        function clearTruckAsLoaded(truckNo) {
+            console.log("clearTruckAsLoaded function called with truckNo: ", truckNo);
+            // Update Firestore to mark the truck as unloaded and unqueued
+            var docId = truckNo.replace('/', '_');
+            var selectedTrucksRef = firebase.firestore().collection('selectedTrucks');
+        
+            console.log("Truck number: ", truckNo);
+            console.log("Document ID: ", docId);
+        
+            selectedTrucksRef.doc(docId).update({
+                loaded: false,
+                queued: false // Clear queued status as well
+            })
+            .then(function() {
+                console.log("Truck marked as unloaded and unqueued successfully");
+        
+                // Remove the truck document from the selected trucks collection
+                selectedTrucksRef.where(firebase.firestore.FieldPath.documentId(), '==', docId).get()
+                .then(function(querySnapshot) {
+                    console.log("Query snapshot: ", querySnapshot);
+        
+                    if (querySnapshot.empty) {
+                        console.log("No matching documents.");
+                        return;
+                    }
+        
+                    querySnapshot.forEach(function(doc) {
+                        console.log("Document data: ", doc.data());
+        
+                        doc.ref.delete()
+                        .then(function() {
+                            console.log("Truck removed from selected list successfully");
+        
+                            // Remove the truck row from the table (if it exists)
+                            var row = document.querySelector(`#truck-rows tr[data-truck="${truckNo}"]`);
+                            if (row) {
+                                row.parentNode.removeChild(row);
+                            }
+                        })
+                        .catch(function(error) {
+                            console.error("Error removing truck from selected list: ", error);
+                        });
+                    });
+                })
+                .catch(function(error) {
+                    console.error("Error querying for truck document: ", error);
+                });
+            })
+            .catch(function(error) {
+                console.error("Error marking truck as unloaded and unqueued: ", error);
+            });
+            
+            // Remove the corresponding row from the table
+            var rowId = 'row-' + truckNo; // Construct the row id
+            var row = document.getElementById(rowId); // Get the row by id
+            if (row) {
+            row.parentNode.removeChild(row); // Remove the row from its parent
+            } else {
+            console.error('Row not found for truck number: ' + truckNo);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            var removeButton = document.getElementById('remove-button');
+            if (removeButton) {
+                removeButton.addEventListener('click', function() {
+                    var checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+                    if (checkboxes.length > 0) {
+                        checkboxes.forEach(function(checkbox) {
+                            var truckNo = checkbox.getAttribute('data-truckNo');
+                            if (truckNo) {
+                                clearTruckAsLoaded(truckNo);
+                            } else {
+                                console.log("Truck number not found for checkbox", checkbox);
+                            }
+                        });
+                    } else {
+                        console.log("No checkboxes selected");
+                    }
+                });
+            } else {
+                console.log("Remove button not found");
+            }
+            
+        });
+
+function setupRealtimeUpdates() {
+    // Set up a listener on the selectedTrucks collection
+    firebase.firestore().collection('selectedTrucks').onSnapshot(function() {
+        // Call getQueuedTrucksCount and update the counter in your HTML
+        getQueuedTrucksCount().then(function(count) {
+            var counterElement = document.querySelector('#queued-trucks-counter');
+            counterElement.textContent = count;
+        });
+    });
+}
+
+// Call setupRealtimeUpdates when the page loads
+setupRealtimeUpdates();
+
+function getQueuedTrucksCount() {
+    var queuedTrucksCount = 0;
+
+    // Retrieve all trucks from Firestore
+    return firebase.firestore().collection('selectedTrucks').get().then(function(querySnapshot) {
+        querySnapshot.forEach(function(doc) {
+            var truckData = doc.data();
+
+            // If the truck is queued, increment queuedTrucksCount
+            if (truckData.queued) {
+                queuedTrucksCount++;
+            }
+        });
+
+        return queuedTrucksCount;
+    });
+}
+
+// Call getQueuedTrucksCount and update the counter in your HTML
+getQueuedTrucksCount().then(function(count) {
+    var counterElement = document.querySelector('#queued-trucks-counter');
+    counterElement.textContent = count;
+});
+
+// genarate pdf
+document.querySelector('#pdf-icon').addEventListener('click', function() {
+    generatePDF();
+});
+
+function generatePDF() {
+    // Retrieve the selected trucks from Firestore
+    firebase.firestore().collection('selectedTrucks').get().then(function(querySnapshot) {
+        var data = [];
+        var docs = querySnapshot.docs;
+        var count = 0; // Initialize a count variable
+
+        // Use a traditional for loop to iterate over the documents
+        for (var i = 0; i < docs.length; i++) {
+            var truckData = docs[i].data();
+
+            // If the truck is queued, don't add it to the PDF
+            if (truckData.queued === true) {
+                continue;
+            }
+
+            // Log the truckData object to the console for debugging
+            console.log(truckData);
+
+            // For each selected truck, add a row to the data array
+            // This assumes that truckData has properties named 'select', 'number', 'truck', 'driver', 'driverId', 'tel', 'product', and 'vObs'
+            // Adjust this to match the structure of your data
+            // Convert the telephone number to a string before adding it to the data array
+            // Add the count + 1 as the first element of the array to auto-number each truck
+            data.push([++count, truckData.truck, truckData.driver, truckData.driverId, String(truckData.tel), truckData.product, String(truckData.vobs)]);
+        }
+
+        // Create a new jsPDF instance
+        var doc = new window.jspdf.jsPDF();
+
+        // Add a title to the PDF
+        doc.setFontSize(18);
+        doc.text('Trucks for Queueing Report', 15, 15);
+
+        // Use the autoTable method to add the data to the PDF
+        doc.autoTable({
+            startY: 20, // Start the table below the title
+            head: [['#', 'Truck', 'Driver', 'Driver ID', 'Telephone', 'Product', 'V(OBS)']],
+            body: data
+        });
+
+        // Save the PDF
+        doc.save('selected-trucks.pdf');
+    });
+}
+
+    </script>
+    </body>
+    </html>

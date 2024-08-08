@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to Our Service</title>
+    <link rel="icon" href="logo.jpg" type="image/jpg">
+    <style>
+         body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            background-image: url('oil.jpg'); /* Add this line, replace 'your-image-url.jpg' with your image's URL */
+            background-position: center;
+            background-size: cover; /* Add this line to scale the background image to be as large as possible */
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.5);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .invoice-button {
+            background-color: #4CAF50; /* Green for invoices */
+        }
+
+        .view-button {
+            background-color: #2196F3; /* Blue for view */
+        }
+
+        .button:hover {
+            opacity: 0.8;
+        }
+
+        .button:active {
+            transform: translateY(2px);
+        }
+
+        .back-button {
+        background-color: #4CAF50; /* Green */
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to invoice Service</h1>
+        <p>Choose an action below:</p>
+        <a href="invoice.html" class="button invoice-button">Generate Invoice</a>
+        <a href="view.html" class="button view-button">View Invoices</a>
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="dashboard.html" class="button back-button">Back to Dashboard</a> <!-- Add the back-button class here -->
+        </div>
+    </div>
+</body>
+</html>

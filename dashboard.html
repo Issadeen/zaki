@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="icon" href="logo.jpg" type="image/jpg">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.7/tailwind.min.css">
+    <script src="https://kit.fontawesome.com/d00c9b568a.js" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-auth.js"></script>
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+
+    <style>
+/* Paste your custom styles here */
+:root {
+    --bg-color: #f4f4f4;
+    --text-color: #000000;
+    --primary-color: #4b5563;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    background-image: url('oil.jpg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover; /* Add this line */
+}
+
+.dashboard-container a {
+    background-color: rgba(255, 255, 255, 0.5); /* Change this line */
+    color: #333;
+    border: 2px solid var(--primary-color); /* Primary color outer ring */
+    box-shadow: 0 0 10px var(--primary-color); /* Primary color box shadow */
+}
+
+.container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bg-primary {
+    background-color: var(--primary-color);
+}
+
+
+
+
+        .hover\:bg-primary:hover {
+            background-color: var(--primary-color);
+        }
+
+        #user-menu {
+            display: none;
+        }
+
+        #user-menu:not(.hidden) {
+            display: block;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .welcome-container {
+            background-color: rgba(255, 255, 255, 0.8); /* 0.8 is the alpha value, adjust it to your liking */
+            padding: 20px; /* Add padding to give some space around the text */
+            border-radius: 10px; /* Optional: Add border-radius to make the corners rounded */
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="flex flex-col h-screen">
+        <div class="flex items-center justify-between bg-gray-200 p-4">
+            <div class="flex items-center">
+                <link rel="icon" href="logo.jpg" type="image/jpg">
+                <h1 class="text-lg font-medium mr-4 animate" style="color: black;">ZAKI TRANSPORTERS</h1>
+            </div>
+            <div class="flex items-center">
+                
+                <button type="button"
+                    class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg mr-2"
+                    title="Notification">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <div class="flex items-center">
+
+                    <div class="relative">
+                        <button class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg"
+                            id="user-button"> Menu <i
+                                class="fas fa-caret-down ml-2"></i></button>
+                        <div class="absolute right-0 mt-2 w-48 bg-gray-200 rounded-lg shadow-lg hidden"
+                            id="user-menu">
+                            <a href="#"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-300">Profile</a>
+                            <a href="settings.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-300">Settings</a>
+                            <a href="index.html"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-300">Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 overflow-y-auto p-4 flex flex-col items-center">
+            <div class="welcome-container mb-18">
+                <h1 class="text-4xl font-bold mb-4" id="welcome-title">Welcome to your <span
+                        id="issaerium"></span>
+                    dashboard</h1>
+                <p class="text-lg" id="welcome-message">Here you can manage your trucks, invoices, and more.
+                </p>
+            </div>
+
+            <div class="flex-1 p-7">
+
+                <!-- Dashboard content -->
+
+                <div class="dashboard-container">
+                    <h2 class="text-3xl font-bold mb-4">Dashboard</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <a href="jwtruck.html"
+                            class="bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg p-6 flex flex-col items-center justify-center"
+                            data-name="Truck Details">
+                            <div class="text-6xl mb-4"><i class="fas fa-truck"></i></div>
+                            <div class="text-2xl font-medium mb-4">Truck Details</div>
+                            <div class="text-lg text-center">View and manage truck information.</div>
+                        </a>
+                        <a href="jwnew.html"
+                            class="bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg p-6 flex flex-col items-center justify-center"
+                            data-name="Work Details">
+                            <div class="text-6xl mb-4"><i class="fas fa-plus"></i></div>
+                            <div class="text-2xl font-medium mb-4">New trucks</div>
+                            <div class="text-lg text-center">Add new trucks.</div>
+                        </a>
+                        <a href="report.html"
+                        class="dashboard-item bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg p-6 flex flex-col items-center justify-center"
+                        data-name="Reports">
+                        <div class="text-4xl mb-2"><i class="fas fa-file-alt"></i></div>
+                        <div class="text-lg font-medium mb-2">Reports</div>
+                        <div class="text-sm text-center">View and manage reports.</div>
+                        </a>
+                        <a href="shortages.html"
+                        class="bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg p-6 flex flex-col items-center justify-center"
+                        data-name="New Trucks">
+                        <div class="text-6xl mb-4"><i class="fas fa-clipboard-list"></i></div>
+                        <div class="text-2xl font-medium mb-4">Shortages Report</div>
+                        <div class="text-lg text-center">Shortages and analytics Reports.</div>
+                    </a>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- The Modal -->
+    <div id="myModal" class="modal">
+        <!-- Modal content -->
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p>Your session will end soon due to inactivity.</p>
+        </div>
+    </div>
+
+    <script>
+        // Get references to the button and the menu
+        const userButton = document.getElementById("user-button");
+        const userMenu = document.getElementById("user-menu");
+
+        // Add an event listener for the click event on the button
+        userButton.addEventListener("click", (event) => {
+            // Prevent the event from bubbling up to the document
+            event.stopPropagation();
+
+            // Toggle the visibility of the menu
+            userMenu.classList.toggle("hidden");
+        });
+
+        // Add an event listener for the click event on the document
+        document.addEventListener("click", () => {
+            // Hide the menu
+            userMenu.classList.add("hidden");
+        });
+    </script>
+
+</body>
+
+</html>
