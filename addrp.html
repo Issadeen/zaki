@@ -9,9 +9,11 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
     <script src="config.js"></script>
     <script src="auth.js"></script>
+
+    <!-- SheetJS (for reading Excel files) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
 
     <!-- Initialize Firebase -->
     <script>
@@ -210,12 +212,89 @@
     </div>
 
     <script>
-        document.getElementById('reportForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        document.getElementById('excelFile').addEventListener('change', handleFileUpload);
 
-            const db = firebase.firestore(); 
-            const storage = firebase.storage();
-            const userId = firebase.auth().currentUser.uid;
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                // Assuming the first sheet is the one we need
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                
+                // Convert sheet data to JSON
+                const sheetData = XLSX.utils.sheet_to_json(firstSheet);
+
+                console.log(sheetData);
+                submitDataToFirebase(sheetData);
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        async function submitDataToFirebase(sheetData) {
+    const db = firebase.firestore();
+    const userId = firebase.auth().currentUser.uid;
+
+    try {
+        for (const row of sheetData) {
+            let dateValue = row['DATE'];
+            let parsedDate = parseDate(dateValue);
+
+            if (!parsedDate) {
+                console.error("Invalid date: ", dateValue);
+                continue;
+            }
+
+            await db.collection('users').doc(userId).collection('userReports').add({
+                date: parsedDate,
+                truckNo: row['TRUCK NO'],
+                orderNo: row['ORDER NO'],
+                loadingDepot: row['LOADING DEPOT'],
+                customerName: row['CUSTOMERS NAME'],
+                product: row['PRODUCT'],
+                volObs: row['VOL @OBS'],
+                vol20: row['VOL @20']
+            });
+        }
+
+        alert("Data saved successfully.");
+    } catch (error) {
+        console.error("Error saving data: ", error);
+        alert("Error saving data: " + error.message);
+    }
+}
+
+function parseDate(dateValue) {
+          // Handle date as DD-MMM-YY (e.g., 23-Aug-24)
+          let parsedDate = new Date(dateValue);
+
+          // Check if dateValue is defined
+          if (typeof dateValue !== 'undefined') {
+            // If the initial parsing fails, try parsing as DD-MMM-YY
+            if (isNaN(parsedDate)) {
+              const [day, month, year] = dateValue.split('-');
+              // Convert month from text to number (e.g., Aug to 08)
+              let monthNumber = new Date(`${year}-${month}-01`).getMonth() + 1;
+              if (monthNumber < 10) {
+                monthNumber = `0${monthNumber}`;
+              }
+              parsedDate = new Date(`${year}-${monthNumber}-${day}`);
+            }
+          } else {
+            // Handle the case where dateValue is undefined
+            console.warn('Date value is undefined. Returning null.');
+            return null;
+          }
+
+          return isNaN(parsedDate) ? null : parsedDate;
+        }
+
+        document.getElementById('reportForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); 
 
             const dateString = document.getElementById('date').value;
             const truckNo = document.getElementById('truckNo').value;
@@ -226,25 +305,12 @@
             const volObs = document.getElementById('volObs').value;
             const vol20 = document.getElementById('vol20').value;
 
-            const excelFile = document.getElementById('excelFile').files[0];
-
-            if (excelFile) {
-                // Handle Excel file upload
-                try {
-                    // Upload the Excel file to Firebase Storage
-                    const storageRef = storage.ref().child(`reports/${userId}/${Date.now()}_${excelFile.name}`);
-                    const uploadTask = await storageRef.put(excelFile);
-
-                    console.log("File uploaded successfully.");
-                    alert("File uploaded successfully.");
-                    document.getElementById('reportForm').reset();
-                } catch (error) {
-                    console.error("Error uploading file: ", error);
-                    alert("Error uploading file: " + error.message);
-                }
-            } else if (dateString && truckNo && orderNo && loadingDepot && customerName && product && volObs && vol20) {
+            if (dateString && truckNo && orderNo && loadingDepot && customerName && product && volObs && vol20) {
                 // Handle form data submission
                 try {
+                    const db = firebase.firestore(); 
+                    const userId = firebase.auth().currentUser.uid;
+
                     await db.collection('users').doc(userId).collection('userReports').add({
                         date: new Date(dateString),
                         truckNo: truckNo,
