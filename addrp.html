@@ -215,37 +215,74 @@
         document.getElementById('excelFile').addEventListener('change', handleFileUpload);
 
         async function handleFileUpload(event) {
-            const file = event.target.files[0];
-            const reader = new FileReader();
+    const file = event.target.files[0];
+    
+    // Check if a file was selected
+    if (!file) {
+        alert("No file selected. Please choose an Excel file.");
+        return;
+    }
 
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
+    // Check file type
+    if (!file.name.match(/\.(xlsx|xls)$/)) {
+        alert("Please select a valid Excel file (.xlsx or .xls)");
+        return;
+    }
 
-                // Assuming the first sheet is the one we need
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                
-                // Convert sheet data to JSON
-                const sheetData = XLSX.utils.sheet_to_json(firstSheet);
+    const reader = new FileReader();
 
-                console.log(sheetData);
-                submitDataToFirebase(sheetData);
-            };
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
 
-            reader.readAsArrayBuffer(file);
+            if (workbook.SheetNames.length === 0) {
+                throw new Error("The Excel file is empty.");
+            }
+
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const sheetData = XLSX.utils.sheet_to_json(firstSheet);
+
+            if (sheetData.length === 0) {
+                throw new Error("No data found in the Excel sheet.");
+            }
+
+            console.log("Parsed Excel data:", sheetData);
+            submitDataToFirebase(sheetData);
+        } catch (error) {
+            console.error("Error processing Excel file:", error);
+            alert("Error processing Excel file: " + error.message);
         }
+    };
 
-        async function submitDataToFirebase(sheetData) {
+    reader.onerror = function(ex) {
+        console.error("File reading failed:", ex);
+        alert("File reading failed. Please try again.");
+    };
+
+    reader.readAsArrayBuffer(file);
+}
+
+async function submitDataToFirebase(sheetData) {
     const db = firebase.firestore();
     const userId = firebase.auth().currentUser.uid;
 
+    let successCount = 0;
+    let errorCount = 0;
+
     try {
         for (const row of sheetData) {
+            if (!validateRow(row)) {
+                errorCount++;
+                continue;
+            }
+
             let dateValue = row['DATE'];
             let parsedDate = parseDate(dateValue);
 
             if (!parsedDate) {
-                console.error("Invalid date: ", dateValue);
+                console.error("Invalid date:", dateValue);
+                errorCount++;
                 continue;
             }
 
@@ -259,41 +296,152 @@
                 volObs: row['VOL @OBS'],
                 vol20: row['VOL @20']
             });
+
+            successCount++;
         }
 
-        alert("Data saved successfully.");
+        alert(`Data saved successfully. ${successCount} rows processed, ${errorCount} rows skipped due to errors.`);
     } catch (error) {
-        console.error("Error saving data: ", error);
+        console.error("Error saving data:", error);
+        alert("Error saving data: " + error.message);
+    }
+}
+
+function validateRow(row) {
+    const requiredFields = ['DATE', 'Product', 'Loading Depot', "Customer's Name", 'Truck No', 'Vol @OBS', 'Vol @20', 'Order No'];
+    for (const field of requiredFields) {
+        if (row[field] === undefined) {
+            console.error(`Missing required field: ${field}`);
+            return false;
+        }
+    }
+    return true;
+}
+
+async function submitDataToFirebase(sheetData) {
+    const db = firebase.firestore();
+    const userId = firebase.auth().currentUser.uid;
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+        for (const row of sheetData) {
+            if (!validateRow(row)) {
+                errorCount++;
+                continue;
+            }
+
+            let dateValue = row['DATE'];
+            let parsedDate = parseDate(dateValue);
+
+            if (!parsedDate) {
+                console.error("Invalid date:", dateValue);
+                errorCount++;
+                continue;
+            }
+
+            await db.collection('users').doc(userId).collection('userReports').add({
+                date: parsedDate,
+                truckNo: row['Truck No'],
+                orderNo: row['Order No'],
+                loadingDepot: row['Loading Depot'],
+                customerName: row["Customer's Name"],
+                product: row['Product'],
+                volObs: row['Vol @OBS'],
+                vol20: row['Vol @20']
+            });
+
+            successCount++;
+        }
+
+        alert(`Data saved successfully. ${successCount} rows processed, ${errorCount} rows skipped due to errors.`);
+    } catch (error) {
+        console.error("Error saving data:", error);
         alert("Error saving data: " + error.message);
     }
 }
 
 function parseDate(dateValue) {
-          // Handle date as DD-MMM-YY (e.g., 23-Aug-24)
-          let parsedDate = new Date(dateValue);
-
-          // Check if dateValue is defined
-          if (typeof dateValue !== 'undefined') {
-            // If the initial parsing fails, try parsing as DD-MMM-YY
-            if (isNaN(parsedDate)) {
-              const [day, month, year] = dateValue.split('-');
-              // Convert month from text to number (e.g., Aug to 08)
-              let monthNumber = new Date(`${year}-${month}-01`).getMonth() + 1;
-              if (monthNumber < 10) {
-                monthNumber = `0${monthNumber}`;
-              }
-              parsedDate = new Date(`${year}-${monthNumber}-${day}`);
-            }
-          } else {
-            // Handle the case where dateValue is undefined
-            console.warn('Date value is undefined. Returning null.');
+    if (typeof dateValue === 'number') {
+        // Handle Excel numeric date
+        const excelEpoch = new Date(1899, 11, 30);
+        const millisPerDay = 24 * 60 * 60 * 1000;
+        return new Date(excelEpoch.getTime() + dateValue * millisPerDay);
+    } else if (typeof dateValue === 'string') {
+        // Handle string date (D-MMM-YY format)
+        const [day, month, year] = dateValue.split('-');
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthIndex = monthNames.indexOf(month);
+        
+        if (monthIndex === -1) {
+            console.error("Invalid month in date:", dateValue);
             return null;
-          }
-
-          return isNaN(parsedDate) ? null : parsedDate;
         }
 
-        document.getElementById('reportForm').addEventListener('submit', async (e) => {
+        // Assuming '24' means 2024
+        const fullYear = 2000 + parseInt(year, 10);
+        return new Date(fullYear, monthIndex, parseInt(day, 10));
+    } else {
+        console.error("Invalid date value:", dateValue);
+        return null;
+    }
+}
+
+function validateRow(row) {
+    const requiredFields = ['DATE', 'Product', 'Loading Depot', "Customer's Name", 'Truck No', 'Vol @OBS', 'Vol @20', 'Order No'];
+    for (const field of requiredFields) {
+        if (row[field] === undefined) {
+            console.error(`Missing required field: ${field}`);
+            return false;
+        }
+    }
+    return true;
+}
+
+async function submitDataToFirebase(sheetData) {
+    const db = firebase.firestore();
+    const userId = firebase.auth().currentUser.uid;
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+        for (const row of sheetData) {
+            if (!validateRow(row)) {
+                errorCount++;
+                continue;
+            }
+
+            let parsedDate = parseDate(row['DATE']);
+
+            if (!parsedDate) {
+                console.error("Invalid date:", row['DATE']);
+                errorCount++;
+                continue;
+            }
+
+            await db.collection('users').doc(userId).collection('userReports').add({
+                date: parsedDate,
+                truckNo: row['Truck No'],
+                orderNo: row['Order No'],
+                loadingDepot: row['Loading Depot'],
+                customerName: row["Customer's Name"],
+                product: row['Product'],
+                volObs: row['Vol @OBS'],
+                vol20: row['Vol @20']
+            });
+
+            successCount++;
+        }
+
+        alert(`Data saved successfully. ${successCount} rows processed, ${errorCount} rows skipped due to errors.`);
+    } catch (error) {
+        console.error("Error saving data:", error);
+        alert("Error saving data: " + error.message);
+    }
+}
+document.getElementById('reportForm').addEventListener('submit', async (e) => {
             e.preventDefault(); 
 
             const dateString = document.getElementById('date').value;
