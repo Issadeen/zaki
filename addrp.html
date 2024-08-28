@@ -405,19 +405,21 @@ async function submitDataToFirebase(sheetData) {
 
     let successCount = 0;
     let errorCount = 0;
+    let errorMessages = [];
 
     try {
         for (const row of sheetData) {
             if (!validateRow(row)) {
                 errorCount++;
+                errorMessages.push(`Row with Order No ${row['Order No']} is missing required fields.`);
                 continue;
             }
 
             let parsedDate = parseDate(row['DATE']);
 
             if (!parsedDate) {
-                console.error("Invalid date:", row['DATE']);
                 errorCount++;
+                errorMessages.push(`Invalid date for Order No ${row['Order No']}: ${row['DATE']}`);
                 continue;
             }
 
@@ -435,12 +437,127 @@ async function submitDataToFirebase(sheetData) {
             successCount++;
         }
 
-        alert(`Data saved successfully. ${successCount} rows processed, ${errorCount} rows skipped due to errors.`);
+        showResultModal(successCount, errorCount, errorMessages);
     } catch (error) {
         console.error("Error saving data:", error);
-        alert("Error saving data: " + error.message);
+        showErrorModal("An error occurred while saving data: " + error.message);
     }
 }
+
+function showResultModal(successCount, errorCount, errorMessages) {
+    const modal = document.getElementById('resultModal');
+    const modalContent = document.getElementById('resultModalContent');
+    const closeBtn = document.getElementsByClassName('close')[0];
+
+    let content = `
+        <h2>Upload Results</h2>
+        <p>Successfully processed: ${successCount} rows</p>
+        <p>Errors encountered: ${errorCount} rows</p>
+    `;
+
+    if (errorCount > 0) {
+        content += `
+            <h3>Error Details:</h3>
+            <ul>
+                ${errorMessages.map(msg => `<li>${msg}</li>`).join('')}
+            </ul>
+        `;
+    }
+
+    content += `
+        <button onclick="closeModal()">Close</button>
+        <button onclick="downloadErrorReport()">Download Error Report</button>
+    `;
+
+    modalContent.innerHTML = content;
+    modal.style.display = "block";
+
+    closeBtn.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+}
+
+function showErrorModal(message) {
+    const modal = document.getElementById('resultModal');
+    const modalContent = document.getElementById('resultModalContent');
+    const closeBtn = document.getElementsByClassName('close')[0];
+
+    modalContent.innerHTML = `
+        <h2>Error</h2>
+        <p>${message}</p>
+        <button onclick="closeModal()">Close</button>
+    `;
+
+    modal.style.display = "block";
+
+    closeBtn.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+}
+
+function closeModal() {
+    document.getElementById('resultModal').style.display = "none";
+}
+
+function downloadErrorReport() {
+    // Implementation for downloading error report
+    // This is a placeholder function - you'll need to implement the actual download logic
+    console.log("Downloading error report...");
+}
+    </script>
+
+    <div id="resultModal" class="modal">
+        <div id="resultModalContent" class="modal-content">
+            <span class="close">×</span>
+            <p>Upload results will be displayed here.</p>
+        </div>
+    </div>
+
+    <script>
+
+        document.getElementsByClassName('close')[0].addEventListener('click', () => {
+            document.getElementById('myModal').style.display = "none";
+        });
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('myModal')) {
+                document.getElementById('myModal').style.display = "none";
+            }
+        };
+
+        let timeout;
+
+        function startTimer() {
+            timeout = setTimeout(() => {
+                document.getElementById('myModal').style.display = "block";
+            }, 300000); // 5 minutes
+        }
+
+        function resetTimer() {
+            clearTimeout(timeout);
+            startTimer();
+        }
+
+        startTimer();
+
+        document.addEventListener('mousemove', resetTimer);
+        document.addEventListener('keypress', resetTimer);
+    </script>
+
+    <script>
+
 document.getElementById('reportForm').addEventListener('submit', async (e) => {
             e.preventDefault(); 
 
