@@ -56,8 +56,7 @@
     <div class="container">
         <h1 class="mb-4">Shortage Analysis</h1>
         <div class="input-group mb-3">
-            <input type="text" class="form-control" id="searchInput" placeholder="Search by Truck No, Product, or Date" aria-label="Search" aria-describedby="searchButton">
-            <button class="btn btn-outline-secondary" id="searchButton" type="button">Search</button>
+            <input type="text" class="form-control" id="searchInput" placeholder="Search by Truck No, Product, or Date" aria-label="Search">
         </div>
         <div class="table-responsive">
             <table id="shortageTable" class="table table-striped table-hover">
@@ -152,7 +151,8 @@
                         <td>${shortage ? shortage.toFixed(2) : '-'}</td>
                         <td>
                             ${totalOffloaded ? 
-                                `<button class="btn btn-sm btn-info" onclick="showTruckDetails('${data.truckNo}')"><i class="fas fa-info-circle"></i> Details</button>` :
+                                `<button class="btn btn-sm btn-info" onclick="showTruckDetails('${data.truckNo}')"><i class="fas fa-info-circle"></i> Details</button>
+                                 <button class="btn btn-sm btn-warning" onclick="verifyEmail('${doc.id}')"><i class="fas fa-edit"></i> Edit</button>` :
                                 `<button class="btn btn-sm btn-primary" onclick="openOffloadModal('${doc.id}', ${data.vol20})"><i class="fas fa-truck-loading"></i> Offloaded?</button>`
                             }
                         </td>
@@ -196,50 +196,35 @@
             window.open(`truck-details.html?truckNo=${encodeURIComponent(truckNo)}`, '_blank');
         }
 
-        // Search Functionality
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
+        function verifyEmail(docId) {
+            const userEmail = firebase.auth().currentUser.email;
+            const inputEmail = prompt("Please enter your email to verify:");
 
-        searchButton.addEventListener('click', async () => {
-            const searchTerm = searchInput.value.toLowerCase();
-            const userId = firebase.auth().currentUser.uid;
-            const tableBody = document.querySelector('#shortageTable tbody');
-            tableBody.innerHTML = '';
-
-            try {
-                const querySnapshot = await db.collection('users').doc(userId).collection('userReports').get();
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const truckNo = data.truckNo.toLowerCase();
-                    const product = data.product.toLowerCase();
-                    const dateString = data.date.toDate().toLocaleDateString().toLowerCase();
-
-                    if (truckNo.includes(searchTerm) || product.includes(searchTerm) || dateString.includes(searchTerm)) {
-                        const row = tableBody.insertRow();
-                        const totalOffloaded = (data.offload1 || 0) + (data.offload2 || 0) + (data.offload3 || 0);
-                        const shortage = data.vol20 - totalOffloaded;
-                        row.innerHTML = `
-                            <td>${data.date.toDate().toLocaleDateString()}</td>
-                            <td>${data.truckNo}</td>
-                            <td>${data.product}</td>
-                            <td>${data.vol20}</td>
-                            <td>${data.offload1 || '-'}</td>
-                            <td>${data.offload2 || '-'}</td>
-                            <td>${data.offload3 || '-'}</td>
-                            <td>${totalOffloaded || '-'}</td>
-                            <td>${shortage ? shortage.toFixed(2) : '-'}</td>
-                            <td>
-                                ${totalOffloaded ? 
-                                    `<button class="btn btn-sm btn-info" onclick="showTruckDetails('${data.truckNo}')"><i class="fas fa-info-circle"></i> Details</button>` :
-                                    `<button class="btn btn-sm btn-primary" onclick="openOffloadModal('${doc.id}', ${data.vol20})"><i class="fas fa-truck-loading"></i> Offloaded?</button>`
-                                }
-                            </td>
-                        `;
-                    }
-                });
-            } catch (error) {
-                console.error("Error searching data: ", error);
+            if (inputEmail && inputEmail === userEmail) {
+                openOffloadModal(docId);
+            } else {
+                alert("Email verification failed. You cannot edit this entry.");
             }
+        }
+
+        // Real-time Search Functionality
+        const searchInput = document.getElementById('searchInput');
+
+        searchInput.addEventListener('input', async () => {
+            const filter = searchInput.value.toUpperCase();
+            const rows = document.querySelectorAll('#shortageTable tbody tr');
+
+            rows.forEach(row => {
+                const truckNo = row.cells[1].textContent.toUpperCase();
+                const product = row.cells[2].textContent.toUpperCase();
+                const date = row.cells[0].textContent.toUpperCase();
+
+                if (truckNo.indexOf(filter) > -1 || product.indexOf(filter) > -1 || date.indexOf(filter) > -1) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
         });
     </script>
 </body>
