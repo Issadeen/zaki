@@ -206,7 +206,7 @@
 
                         // Function to check if a value is undefined
                         function checkUndefined(value) {
-                            return value === undefined ? '' : value;
+                        return (value === undefined || value === null) ? '' : value;
                         }
 
                         // Calculate the total of AGO and PMS
