@@ -130,22 +130,21 @@
                     });
                 });
 
-                // Sort trips by date (most recent first) and limit to 30
+                // Sort trips by date (most recent first)
                 trips.sort((a, b) => b.date - a.date);
-                const recentTrips = trips.slice(0, 30);
 
-                // Calculate summary statistics
-                const totalTrips = recentTrips.length;
-                const totalShortage = recentTrips.reduce((sum, trip) => sum + trip.shortage, 0);
-                const averageShortage = totalShortage / totalTrips;
-                const recentTrend = recentTrips[0].shortage < averageShortage ? 'down' : 'up';
+                // Calculate summary statistics based on total offload
+                const totalTrips = trips.length;
+                const totalOffload = trips.reduce((sum, trip) => sum + trip.totalOffloaded, 0);
+                const averageOffload = totalTrips > 0 ? totalOffload / totalTrips : 0;
+                const recentTrend = totalTrips > 0 && trips[0].totalOffloaded > averageOffload ? 'up' : 'down';
 
                 // Display summary statistics
                 summaryStats.innerHTML = `
-                    <h4>Summary Statistics (Last ${totalTrips} Trips)</h4>
+                    <h4>Summary Statistics (All Trips)</h4>
                     <p><strong>Total Trips:</strong> ${totalTrips}</p>
-                    <p><strong>Total Shortage:</strong> ${totalShortage.toFixed(2)}</p>
-                    <p><strong>Average Shortage:</strong> ${averageShortage.toFixed(2)}</p>
+                    <p><strong>Total Offloaded:</strong> ${totalTrips > 0 ? totalOffload.toFixed(2) : '-'}</p>
+                    <p><strong>Average Offload:</strong> ${totalTrips > 0 ? averageOffload.toFixed(2) : '-'}</p>
                     <p><strong>Recent Trend:</strong> 
                         <span class="trend-${recentTrend}">
                             ${recentTrend === 'up' ? '↑ Increasing' : '↓ Decreasing'}
@@ -154,8 +153,12 @@
                 `;
 
                 // Populate table
-                recentTrips.forEach((trip) => {
+                trips.forEach((trip) => {
                     const row = truckDetailTableBody.insertRow();
+
+                    const totalOffloaded = trip.totalOffloaded || '-';
+                    const shortage = (totalOffloaded === '-' || totalOffloaded === 0) ? '' : trip.shortage.toFixed(2);
+
                     row.innerHTML = `
                         <td>${trip.date.toLocaleDateString()}</td>
                         <td>${trip.product}</td>
@@ -163,8 +166,8 @@
                         <td>${trip.offload1 || '-'}</td>
                         <td>${trip.offload2 || '-'}</td>
                         <td>${trip.offload3 || '-'}</td>
-                        <td>${trip.totalOffloaded || '-'}</td>
-                        <td>${trip.shortage ? trip.shortage.toFixed(2) : '-'}</td>
+                        <td>${totalOffloaded}</td>
+                        <td>${shortage}</td>
                     `;
                 });
 
