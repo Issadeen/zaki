@@ -7,8 +7,8 @@
 
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="config.js"></script>
     <script src="auth.js"></script>
 
@@ -17,54 +17,86 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
+    <!-- Particles.js Library -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
     <style>
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: #f8f9fa;
-            color: #333;
+            background-color: #0d1117;
+            color: #e0e0e0;
+            overflow: hidden;
         }
+
         .container {
-            background-color: #ffffff;
+            background-color: #161b22;
             border-radius: 8px;
             padding: 20px;
             margin-top: 20px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            z-index: 1;
+            position: relative;
         }
+
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
         table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
         }
+
         th, td {
             padding: 12px;
-            border: 1px solid #dee2e6;
+            border: 1px solid #333;
         }
+
         th {
-            background-color: #f8f9fa;
+            background-color: #212121;
+            color: #ffffff;
             font-weight: 600;
         }
+
         .summary-card {
-            background-color: #f8f9fa;
+            background-color: #1e1e1e;
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 0 5px rgba(0,0,0,0.05);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
         }
+
         .trend-up {
-            color: green;
+            color: #00c853;
         }
+
         .trend-down {
-            color: red;
+            color: #d50000;
+        }
+
+        .trend-info {
+            font-size: 0.875rem;
+            margin-top: 5px;
+            color: #bdbdbd;
+        }
+
+        .text-center {
+            color: #e0e0e0;
         }
     </style>
 </head>
 <body>
+    <div id="particles-js"></div>
     <div class="container">
         <h1 id="truckTitle" class="mb-4">Truck Details</h1>
         <div id="summaryStats" class="summary-card"></div>
         <div class="table-responsive">
-            <table id="truckDetailTable" class="table table-striped table-hover">
-                <thead class="table-light">
+            <table id="truckDetailTable" class="table table-dark table-striped table-hover">
+                <thead>
                     <tr>
                         <th>Date</th>
                         <th>Product</th>
@@ -126,38 +158,47 @@
                         offload2: data.offload2 || 0,
                         offload3: data.offload3 || 0,
                         totalOffloaded: (data.offload1 || 0) + (data.offload2 || 0) + (data.offload3 || 0),
-                        shortage: data.vol20 - ((data.offload1 || 0) + (data.offload2 || 0) + (data.offload3 || 0))
+                        shortage: data.vol20 - ((data.offload1 || 0) + (data.offload2 || 0) + (data.offload3 || 0)),
+                        offloadPoints: data.offloadPoints || [] // Retrieve offload points
                     });
                 });
 
                 // Sort trips by date (most recent first)
                 trips.sort((a, b) => b.date - a.date);
 
-                // Calculate summary statistics based on total offload
+                // Calculate summary statistics
                 const totalTrips = trips.length;
-                const totalOffload = trips.reduce((sum, trip) => sum + trip.totalOffloaded, 0);
-                const averageOffload = totalTrips > 0 ? totalOffload / totalTrips : 0;
-                const recentTrend = totalTrips > 0 && trips[0].totalOffloaded > averageOffload ? 'up' : 'down';
+                const totalShortages = trips.filter(trip => trip.shortage > 0).length;
+                const totalPositiveShortages = trips.filter(trip => trip.shortage < 0).length;
+                const moreShortages = totalShortages > totalPositiveShortages ? 'more' : 'few';
 
-                // Display summary statistics
+                const recentTrend = moreShortages === 'more' ? 'up' : 'down';
+
+                // Display summary statistics with trend explanation
                 summaryStats.innerHTML = `
-                    <h4>Summary Statistics (All Trips)</h4>
+                    <h4>Summary Statistics (Monthly)</h4>
                     <p><strong>Total Trips:</strong> ${totalTrips}</p>
-                    <p><strong>Total Offloaded:</strong> ${totalTrips > 0 ? totalOffload.toFixed(2) : '-'}</p>
-                    <p><strong>Average Offload:</strong> ${totalTrips > 0 ? averageOffload.toFixed(2) : '-'}</p>
-                    <p><strong>Recent Trend:</strong> 
+                    <p><strong>Total Positive Shortages:</strong> ${totalPositiveShortages}</p>
+                    <p><strong>Total Shortages:</strong> ${totalShortages}</p>
+                    <p><strong>Trend:</strong> 
                         <span class="trend-${recentTrend}">
-                            ${recentTrend === 'up' ? '↑ Increasing' : '↓ Decreasing'}
-                        </span>
+                            ${recentTrend === 'up' ? '↑ More Shortages' : '↓ Fewer Shortages'}
+                        </span> (${totalShortages} out of ${totalTrips} trips have shortages)
+                    </p>
+                    <p class="trend-info">
+                        The trend indicates whether there are more trips with shortages or more trips where offloading exceeds expectations.
+                        An ↑ means more shortages, while a ↓ means fewer shortages.
                     </p>
                 `;
 
-                // Populate table
+                // Populate table with trip details
                 trips.forEach((trip) => {
                     const row = truckDetailTableBody.insertRow();
 
                     const totalOffloaded = trip.totalOffloaded || '-';
-                    const shortage = (totalOffloaded === '-' || totalOffloaded === 0) ? '' : trip.shortage.toFixed(2);
+                    const shortageValue = trip.shortage > 0 
+                        ? `+${trip.shortage.toFixed(2)}` // Positive shortage indicates more offloaded than expected
+                        : `${trip.shortage.toFixed(2)}`; // Negative shortage indicates less offloaded (potential loss)
 
                     row.innerHTML = `
                         <td>${trip.date.toLocaleDateString()}</td>
@@ -167,7 +208,7 @@
                         <td>${trip.offload2 || '-'}</td>
                         <td>${trip.offload3 || '-'}</td>
                         <td>${totalOffloaded}</td>
-                        <td>${shortage}</td>
+                        <td>${shortageValue}</td>
                     `;
                 });
 
@@ -177,6 +218,18 @@
                 summaryStats.innerHTML = '<p class="text-center">Error loading summary statistics.</p>';
             }
         }
+
+        // Initialize Particles.js
+        particlesJS("particles-js", {
+            particles: {
+                number: { value: 100 },
+                size: { value: 3 },
+                color: { value: "#ffffff" },
+                opacity: { value: 0.3 },
+                line_linked: { enable: true, color: "#666666" },
+                move: { enable: true, speed: 1 }
+            }
+        });
     </script>
 </body>
 </html>
