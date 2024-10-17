@@ -1,79 +1,104 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <title>Welcome to Our Service</title>
+    <title>Zaki reports</title>
     <link rel="icon" href="logo.jpg" type="image/jpg">
-    <style>
-         body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f2f5;
-            background-image: url('oil.jpg'); /* Add this line, replace 'your-image-url.jpg' with your image's URL */
-            background-position: center;
-            background-size: cover; /* Add this line to scale the background image to be as large as possible */
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'custom-dark': '#0d1117',
+                        'custom-dark-secondary': '#161b22',
+                        'custom-accent': '#58a6ff',
+                        'custom-accent-hover': '#79b6ff',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
         }
-        .container {
-            background-color: rgba(255, 255, 255, 0.5);
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        h1 {
-            color: #4CAF50;
-            margin-bottom: 20px;
-        }
-
-        .button {
-            display: inline-block;
-            padding: 15px 30px;
-            margin: 15px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .invoice-button {
-            background-color: #4CAF50; /* Green for invoices */
-        }
-
-        .view-button {
-            background-color: #2196F3; /* Blue for view */
-        }
-
-        .button:hover {
-            opacity: 0.8;
-        }
-
-        .button:active {
-            transform: translateY(2px);
-        }
-
-        .back-button {
-        background-color: #4CAF50; /* Green */
-    }
-    </style>
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script src="https://kit.fontawesome.com/d00c9b568a.js" crossorigin="anonymous"></script>
 </head>
-<body>
-    <div class="container">
-        <h1>Welcome to Report Service</h1>
-        <p>Handle loaded trucks report:</p>
-        <a href="addrp.html" class="button invoice-button">Add repot</a>
-        <a href="dsrp.html" class="button view-button">View report</a>
-        <div style="text-align: center; margin-top: 20px;">
-            <a href="dashboard.html" class="button back-button">Back to Dashboard</a> <!-- Add the back-button class here -->
+<body class="bg-custom-dark text-white flex flex-col min-h-screen">
+    <div id="particles-js" class="fixed inset-0 z-0"></div>
+
+    <!-- Glassy top bar -->
+    <header class="bg-custom-dark-secondary bg-opacity-30 backdrop-filter backdrop-blur-lg sticky top-0 z-10 shadow-lg">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="logo.jpg" alt="Logo" class="h-10 w-10 mr-2 rounded-full border-2 border-custom-accent animate-pulse-slow">
+                <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-custom-accent to-purple-400">ZAKI</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="toggle-theme" class="text-custom-accent hover:text-custom-accent-hover transition-colors duration-300">
+                    <i class="fas fa-adjust"></i>
+                </button>
+                <button id="back-button" class="text-custom-accent hover:text-custom-accent-hover transition-colors duration-300">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+            </div>
         </div>
-    </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8 flex justify-center items-center">
+        <div class="bg-custom-dark-secondary bg-opacity-30 backdrop-filter backdrop-blur-lg rounded-lg p-6 shadow-lg border border-custom-accent border-opacity-30 text-center">
+            <h2 class="text-3xl font-bold mb-6 text-custom-accent">Welcome to Report Screening</h2>
+            <p class="mb-6">Handle loaded trucks report:</p>
+            <div class="space-y-4">
+                <a href="addrp.html" class="button invoice-button bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-md transition-colors duration-300">Add Report</a>
+                <a href="dsrp.html" class="button view-button bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md transition-colors duration-300">View Report</a>
+            </div>
+            <div class="mt-6">
+                <a href="dashboard.html" class="button back-button bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-md transition-colors duration-300">Back to Dashboard</a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Particle.js configuration
+        particlesJS("particles-js", {
+            particles: {
+                number: { value: 80, density: { enable: true, value_area: 800 } },
+                color: { value: "#58a6ff" },
+                shape: { type: "circle" },
+                opacity: { value: 0.5, random: false, anim: { enable: false } },
+                size: { value: 3, random: true, anim: { enable: false } },
+                line_linked: { enable: true, distance: 150, color: "#58a6ff", opacity: 0.4, width: 1 },
+                move: { enable: true, speed: 2, direction: "none", random: false, straight: false, out_mode: "out", bounce: false }
+            },
+            interactivity: {
+                detect_on: "canvas",
+                events: { onhover: { enable: true, mode: "repulse" }, onclick: { enable: true, mode: "push" }, resize: true },
+                modes: { repulse: { distance: 100, duration: 0.4 }, push: { particles_nb: 4 } }
+            },
+            retina_detect: true
+        });
+
+        // Theme toggle functionality
+        const toggleThemeButton = document.getElementById('toggle-theme');
+        toggleThemeButton.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        });
+
+        // Back button functionality
+        const backButton = document.getElementById('back-button');
+        backButton.addEventListener('click', () => {
+            window.location.href = 'dashboard.html';
+        });
+
+        // Set theme on load
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+        });
+    </script>
 </body>
 </html>
