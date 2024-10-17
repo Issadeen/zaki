@@ -1,683 +1,334 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" class="dark">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>New Truck Form</title>
-    <!-- Firebase JavaScript SDK -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Truck Form - Zaki Transporters</title>
+    <link rel="icon" href="logo.jpg" type="image/jpg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'custom-dark': '#0d1117',
+                        'custom-dark-secondary': '#161b22',
+                        'custom-accent': '#58a6ff',
+                        'custom-accent-hover': '#79b6ff',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script src="https://kit.fontawesome.com/d00c9b568a.js" crossorigin="anonymous"></script>
     <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-firestore.js"></script> 
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-firestore.js"></script>
     <script src="config.js"></script>
     <script src="auth.js"></script>
-    <!-- Initialize Firebase -->
+</head>
+<body class="bg-custom-dark text-white flex flex-col min-h-screen">
+    <div id="particles-js" class="fixed inset-0 z-0"></div>
+
+    <!-- Glassy top bar -->
+    <header class="bg-custom-dark-secondary bg-opacity-30 backdrop-filter backdrop-blur-lg sticky top-0 z-10 shadow-lg">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="logo.jpg" alt="Zaki Transporters Logo" class="h-10 w-10 mr-2 rounded-full border-2 border-custom-accent animate-pulse-slow">
+                <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-custom-accent to-purple-400">ZAKI TRANSPORTERS</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="toggle-theme" class="text-custom-accent hover:text-custom-accent-hover transition-colors duration-300">
+                    <i class="fas fa-adjust"></i>
+                </button>
+                <button id="back-button" class="text-custom-accent hover:text-custom-accent-hover transition-colors duration-300">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <div class="bg-custom-dark-secondary bg-opacity-30 backdrop-filter backdrop-blur-lg rounded-lg p-6 shadow-lg border border-custom-accent border-opacity-30">
+            <h2 class="text-3xl font-bold mb-6 text-center text-custom-accent">New Truck Form</h2>
+            <form id="new_truck_form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="truck_no" class="block text-sm font-medium text-gray-300 mb-1">Truck No:</label>
+                        <input type="text" id="truck_no" required class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                    </div>
+                    <div>
+                        <label for="owner" class="block text-sm font-medium text-gray-300 mb-1">Owner:</label>
+                        <input type="text" id="owner" required class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                    </div>
+                    <div>
+                        <label for="transporter" class="block text-sm font-medium text-gray-300 mb-1">Transporter:</label>
+                        <input type="text" id="transporter" required class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                    </div>
+                    <div>
+                        <label for="driver" class="block text-sm font-medium text-gray-300 mb-1">Driver:</label>
+                        <input type="text" id="driver" required class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="text-xl font-semibold text-custom-accent">AGO Compartments</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="ago_comp_1" class="block text-sm font-medium text-gray-300 mb-1">AGO Comp 1:</label>
+                            <input type="number" id="ago_comp_1" required class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                        </div>
+                        <div>
+                            <label for="ago_comp_2" class="block text-sm font-medium text-gray-300 mb-1">AGO Comp 2:</label>
+                            <input type="number" id="ago_comp_2" required class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                        </div>
+                        <div>
+                            <label for="ago_comp_3" class="block text-sm font-medium text-gray-300 mb-1">AGO Comp 3:</label>
+                            <input type="number" id="ago_comp_3" required class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="text-xl font-semibold text-custom-accent">PMS Compartments</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="pms_1" class="block text-sm font-medium text-gray-300 mb-1">PMS 1:</label>
+                            <input type="number" id="pms_1" required class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                        </div>
+                        <div>
+                            <label for="pms_2" class="block text-sm font-medium text-gray-300 mb-1">PMS 2:</label>
+                            <input type="number" id="pms_2" required class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                        </div>
+                        <div>
+                            <label for="pms_3" class="block text-sm font-medium text-gray-300 mb-1">PMS 3:</label>
+                            <input type="number" id="pms_3" required class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center">
+                    <input type="checkbox" id="add-compartments" class="mr-2 h-4 w-4 text-custom-accent focus:ring-custom-accent border-gray-600 rounded">
+                    <label for="add-compartments" class="text-sm font-medium text-gray-300">Add 3 more AGO and PMS Comps</label>
+                </div>
+
+                <div id="additional-compartments" class="hidden space-y-6">
+                    <div class="space-y-4">
+                        <h3 class="text-xl font-semibold text-custom-accent">Additional AGO Compartments</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="ago_comp_4" class="block text-sm font-medium text-gray-300 mb-1">AGO Comp 4:</label>
+                                <input type="number" id="ago_comp_4" class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                            </div>
+                            <div>
+                                <label for="ago_comp_5" class="block text-sm font-medium text-gray-300 mb-1">AGO Comp 5:</label>
+                                <input type="number" id="ago_comp_5" class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                            </div>
+                            <div>
+                                <label for="ago_comp_6" class="block text-sm font-medium text-gray-300 mb-1">AGO Comp 6:</label>
+                                <input type="number" id="ago_comp_6" class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h3 class="text-xl font-semibold text-custom-accent">Additional PMS Compartments</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="pms_4" class="block text-sm font-medium text-gray-300 mb-1">PMS 4:</label>
+                                <input type="number" id="pms_4" class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                            </div>
+                            <div>
+                                <label for="pms_5" class="block text-sm font-medium text-gray-300 mb-1">PMS 5:</label>
+                                <input type="number" id="pms_5" class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                            </div>
+                            <div>
+                                <label for="pms_6" class="block text-sm font-medium text-gray-300 mb-1">PMS 6:</label>
+                                <input type="number" id="pms_6" class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="ago-total" class="block text-sm font-medium text-gray-300 mb-1">AGO Total:</label>
+                        <input type="text" id="ago-total" readonly class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                    </div>
+                    <div>
+                        <label for="pms-total" class="block text-sm font-medium text-gray-300 mb-1">PMS Total:</label>
+                        <input type="text" id="pms-total" readonly class="w-full px-3 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
+                    </div>
+                </div>
+
+                <div class="flex justify-center">
+                    <button type="submit" class="px-6 py-2 bg-custom-accent text-white rounded-md hover:bg-custom-accent-hover focus:outline-none focus:ring-2 focus:ring-custom-accent focus:ring-offset-2 focus:ring-offset-custom-dark transition-colors duration-300">
+                        Submit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="myModal" class="fixed z-50 inset-0 overflow-y-auto hidden">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-custom-dark-secondary rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-custom-dark-secondary px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-custom-accent" id="modal-title">
+                                Session Timeout
+                            </h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-300">
+                                    Your session will end soon due to inactivity.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-custom-dark-secondary px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-custom-accent text-base font-medium text-white hover:bg-custom-accent-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-accent sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-300">
+                        Stay Logged In
+                    </button>
+                    <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-custom-dark text-base font-medium text-gray-300 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-300">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Initialize Firebase
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
-    </script>
-    <style>
-        /* Common styles for both light and dark themes */
-body {
-    font-family: Arial, sans-serif;
-    font-size: 16px;
-    line-height: 1.5;
-    margin: 0;
-    padding: 0;
-}
-
-h1 {
-    font-size: 36px;
-    margin: 20px 0;
-    text-align: center;
-}
-
-/* Light Theme Styles */
-.card {
-    background-color: #fff;
-    color: #333;
-    /* Add other light theme styles as needed */
-}
-
-/* Dark Theme Styles */
-body.dark {
-    background-color: #1a202c;
-    color: #fff;
-}
-
-.card.dark {
-    background-color: #1a202c;
-    color: #fff;
-    /* Add other dark theme styles as needed */
-}
-
-.container.dark {
-    color: #1a202c;
-    /* Add other dark theme styles as needed */
-}
-
-/* Input and Label Styles */
-.card label,
-.card input[type="text"],
-.container label,
-.container input[type="text"] {
-    background-color: #fff; /* Light theme background color for labels and inputs */
-    color: #333; /* Light theme text color for labels and inputs */
-    border-color: #ccc; /* Light theme border color for inputs */
-}
-
-body.dark label,
-body.dark input[type="text"] {
-    background-color: #1a202c; /* Dark theme background color for labels and inputs */
-    color: #fff; /* Dark theme text color for labels and inputs */
-    border-color: #fff; /* Dark theme border color for inputs */
-}
-
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 16px;
-            line-height: 1.5;
-            margin: 0;
-            padding: 0;
-        }
-
-        body.dark {
-            background-color: #1a202c;
-            color: #fff;
-        }
-
-        h1 {
-            font-size: 36px;
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        .card {
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-            margin: 20px auto;
-            max-width: 1090px;
-            padding: 20px;
-        }
-
-        .card.dark {
-            background-color: #1a202c;
-            color: #333;
-        }
-
-        .container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .container.dark {
-            color: #1a202c;
-        }
-
-        .form-group {
-            flex-basis: 100%;
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #1a202c;
-        }
-
-        .form-group input[type="text"] {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-            box-sizing: border-box;
-            background-color: #fff;
-            color: #fff;
-        }
-
-        input[type="text"]:focus,
-        input[type="password"]:focus,
-        textarea:focus {
-            color: black;
-        }
-
-        input[type="text"]:not(:focus),
-        input[type="password"]:not(:focus),
-        textarea:not(:focus) {
-            color: #050000;
-        }
-
-        .form-group input[type="text"]:focus {
-            outline: none;
-            border-color: #007bff;
-        }
-
-        .form-group input[type="text"]:invalid {
-            border-color: #dc3545;
-        }
-
-        .form-group input[type="text"]:valid {
-            border-color: #28a745;
-        }
-
-        @media (min-width: 990px) {
-            .form-group {
-                flex-basis: calc(50% - 10px);
-            }
-        }
-
-        .submit-button {
-            display: block;
-            margin: 20px auto 0;
-            padding: 10px 20px;
-            background-color: #28a745;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        .submit-button:hover {
-            background-color: #218838;
-        }
-
-        .back-button {
-            display: inline-block;
-            margin: 20px auto 0;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        .back-button:hover {
-            background-color: #0069d9;
-        }
-
-        body.dark label,
-        body.dark input[type="text"] {
-            background-color: #1a202c;
-            color: #fff;
-            border-color: #fff;
-        }
-
-        body.dark h1 {
-            color: #fff;
-        }
-
-        #toggle_button {
-            display: block;
-            margin-top: 20px;
-            margin-left: auto;
-        }
-        .background-text {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            font-size: 10vw; /* Adjust this value to change the size of the text */
-            z-index: -1;
-            color: rgba(0, 0, 0, 0.1); /* Adjust this value to change the color and opacity of the text */
-            background-image: repeating-linear-gradient(
-                -45deg,
-                transparent,
-                transparent 10px,
-                currentColor 10px,
-                currentColor 20px
-            );
-            pointer-events: none;
-        }
-
- /* The Modal (background) */
- .modal {
-          display: none; /* Hidden by default */
-          position: fixed; /* Stay in place */
-          z-index: 1; /* Sit on top */
-          left: 0;
-          top: 0;
-          width: 100%; /* Full width */
-          height: 100%; /* Full height */
-          overflow: auto; /* Enable scroll if needed */
-          background-color: rgb(0,0,0); /* Fallback color */
-          background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-        }
-
-/* Modal Content/Box */
-.modal-content {
-  background-color: #180101;
-  margin: 15% auto; /* 15% from the top and centered */
-  padding: 20px;
-  border: 1px solid #888;
-  width: 80%; /* Could be more or less, depending on screen size */
-  color: #f9f2f2; /* Set text color to black */
-}
-
-        /* The Close Button */
-        .close {
-          color: #aaa;
-          float: right;
-          font-size: 28px;
-          font-weight: bold;
-        }
-
-        .close:hover,
-        .close:focus {
-          color: black;
-          text-decoration: none;
-          cursor: pointer;
-        }
-
-        body.light-theme .modal {
-            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-        }
-
-        body.dark-theme .modal {
-            background-color: rgba(255,255,255,0.4); /* White w/ opacity */
-        }
-
-        body.light-theme .modal-content {
-            background-color: var(--light-background);
-            color: var(--light-text);
-            border: 1px solid var(--light-secondary);
-        }
-
-        body.dark-theme .modal-content {
-            background-color: var(--dark-background);
-            color: var(--dark-text);
-            border: 1px solid var(--dark-secondary);
-        }
-
-        body.light-theme .close {
-            color: var(--light-secondary);
-        }
-
-        body.light-theme .close:hover,
-        body.light-theme .close:focus {
-            color: var(--light-primary);
-        }
-
-        body.dark-theme .close {
-            color: var(--dark-secondary);
-        }
-
-        body.dark-theme .close:hover,
-        body.dark-theme .close:focus {
-            color: var(--dark-primary);
-        }
-
-
-    </style>
-</head>
-<body>
-
-<div class="card">
-    <h1>New Truck Form</h1>
-    <div class="background-text">issaerium-23</div>
-</div>
-<div class="card">
-    <form id="new_truck_form">
-        <div class="container">
-            <div class="form-group">
-                <label for="truck_no">Truck No:</label>
-                <input type="text" id="truck_no" required
-                       oninvalid="this.setCustomValidity('Please enter a valid truck number (e.g. SSD022U/SSD235U)')"
-                       oninput="this.setCustomValidity('')"/>
-            </div>
-            <div class="form-group">
-                <label for="owner">Owner:</label>
-                <input type="text" id="owner" required>
-            </div>
-            <div class="form-group">
-                <label for="transporter">Transporter:</label>
-                <input type="text" id="transporter" required>
-            </div>
-            <div class="form-group">
-                <label for="driver">Driver:</label>
-                <input type="text" id="driver" required>
-            </div>
-
-            <div class="form-group">
-                <label for="ago_comp_1">AGO Comp 1:</label>
-                <input type="text" id="ago_comp_1" pattern="[0-9]+(\.[0-9]+)?" required>
-            </div>
-
-            <div class="form-group">
-                <label for="ago_comp_2">AGO Comp 2:</label>
-                <input type="text" id="ago_comp_2" pattern="[0-9]+(\.[0-9]+)?" required>
-            </div>
-            <!-- Move the form group for AGO 4 after the form group for AGO 3 -->
-            <div class="form-group">
-                <label for="ago_comp_3">AGO Comp 3:</label>
-                <input type="text" id="ago_comp_3" pattern="[0-9]+(\.[0-9]+)?" required>
-            </div>
-            <div class="form-group" id="ago-comp-4-group" style="display: none;">
-                <label for="ago_comp_4">AGO Comp 4:</label>
-                <input type="text" id="ago_comp_4" pattern="[0-9]+(\.[0-9]+)?">
-            </div>
-            <!-- Add more form groups for AGO compartments and hide them initially -->
-            <div class="form-group" id="ago-comp-5-group" style="display: none;">
-                <label for="ago_comp_5">AGO Comp 5:</label>
-                <input type="text" id="ago_comp_5" pattern="[0-9]+(\.[0-9]+)?">
-            </div>
-            <!-- Add more form groups for AGO compartments and hide them initially -->
-            <div class="form-group" id="ago-comp-6-group" style="display: none;">
-                <label for="ago_comp_6">AGO Comp 6:</label>
-                <input type="text" id="ago_comp_6" pattern="[0-9]+(\.[0-9]+)?">
-            </div>
-
-            <div class="form-group">
-                <label for="pms_1">PMS 1:</label>
-                <input type="text" id="pms_1" pattern="[0-9]+(\.[0-9]+)?" required>
-            </div>
-            <div class="form-group">
-                <label for="pms_2">PMS 2:</label>
-                <input type="text" id="pms_2" pattern="[0-9]+(\.[0-9]+)?" required>
-            </div>
-            <!-- Move the form group for PMS 4 after the form group for PMS 3 -->
-            <div class="form-group">
-                <label for="pms_3">PMS 3:</label>
-                <input type="text" id="pms_3" pattern="[0-9]+(\.[0-9]+)?" required>
-            </div>
-            <div class="form-group" id="pms-4-group" style="display: none;">
-                <label for="pms_4">PMS 4:</label>
-                <input type="text" id="pms_4" pattern="[0-9]+(\.[0-9]+)?">
-            </div>
-
-            <!-- Add more form groups for PMS compartments and hide them initially -->
-            <div class="form-group" id="pms-5-group" style="display: none;">
-                <label for="pms_5">PMS 5:</label>
-                <input type="text" id="pms_5" pattern="[0-9]+(\.[0-9]+)?">
-            </div>
-            <!-- Add more form groups for PMS compartments and hide them initially -->
-            <div class="form-group" id="pms-6-group" style="display: none;">
-                <label for="pms_6">PMS 6:</label>
-                <input type="text" id="pms_6" pattern="[0-9]+(\.[0-9]+)?">
-        </div>
-
-            <!-- Add the new form group with a checkbox input -->
-            <div class="form-group">
-                <label for="add-compartments">Add 3 more AGO and PMS Comps:</label>
-                <input type="checkbox" id="add-compartments">
-            </div>
-        </div>
-        <button type="submit" class="submit-button">Submit</button>
-        <!-- Add two new elements to display the totals for AGO and PMS -->
-        <div class="form-group">
-            <label for="ago-total">AGO Total:</label>
-            <input type="text" id="ago-total" readonly>
-        </div>
-        <div class="form-group">
-            <label for="pms-total">PMS Total:</label>
-            <input type="text" id="pms-total" readonly>
-        </div>
-
-        <button type="button" class="back-button" onclick="goBack()">Back</button>
-        <button type="button" id="toggle_button" onclick="toggleTheme()">Toggle Theme</button>
-    </form>
-
-      <!-- The Modal -->
-  <div id="myModal" class="modal">
-    <!-- Modal content -->
-    <div class="modal-content">
-      <span class="close">×</span>
-      <p>Your session will end soon due to inactivity.</p>
-    </div>
-  </div>
-    <script>
-        const form = document.getElementById('new_truck_form');
-        const submitButton = document.querySelector('.submit-button');
-        const addCompartmentsCheckbox = document.getElementById("add-compartments");
-        const agoComp4Group = document.getElementById("ago-comp-4-group");
-        const pms4Group = document.getElementById("pms-4-group");
-        const agoComp4Input = document.getElementById("ago_comp_4");
-        const pms4Input = document.getElementById("pms_4");
-        const agoComp5Group = document.getElementById("ago-comp-5-group");
-        const pms5Group = document.getElementById("pms-5-group");
-        const agoComp5Input = document.getElementById("ago_comp_5");
-        const pms5Input = document.getElementById("pms_5");
-        const agoComp6Group = document.getElementById("ago-comp-6-group");
-        const pms6Group = document.getElementById("pms-6-group");
-        const agoComp6Input = document.getElementById("ago_comp_6");
-        const pms6Input = document.getElementById("pms_6");
-
-addCompartmentsCheckbox.addEventListener("change", function () {
-    if (this.checked) {
-        agoComp4Group.style.display = "block";
-        pms4Group.style.display = "block";
-        agoComp5Group.style.display = "block";
-        pms5Group.style.display = "block";
-        agoComp6Group.style.display = "block";
-        pms6Group.style.display = "block";
-        agoComp4Input.required = true;
-        pms4Input.required = true;
-        agoComp5Input.required = true;
-        pms5Input.required = true;
-        agoComp6Input.required = true;
-        pms6Input.required = true;
-    } else {
-        agoComp4Group.style.display = "none";
-        pms4Group.style.display = "none";
-        agoComp5Group.style.display = "none";
-        pms5Group.style.display = "none";
-        agoComp6Group.style.display = "none";
-        pms6Group.style.display = "none";
-        agoComp4Input.required = false;
-        pms4Input.required = false;
-        agoComp5Input.required = false;
-        pms5Input.required = false;
-        agoComp6Input.required = false;
-        pms6Input.required = false;
-    }
-});
-
-form.addEventListener('submit', async function (event) {
-    // Prevent form submission
-    event.preventDefault();
-
-    // Update the text of the submit button
-    submitButton.textContent = "Submitting...";
-
-    // Check if all required fields have a value
-    const requiredFields = form.querySelectorAll('[required]');
-    let isValid = true;
-
-    requiredFields.forEach(function (field) {
-        // Only validate the AGO 4 and PMS 4 fields if the checkbox is checked
-        if (field === agoComp4Input || field === pms4Input) {
-            if (addCompartmentsCheckbox.checked && !field.value) {
-                isValid = false;
-                field.classList.add('is-invalid');
-            } else {
-                field.classList.remove('is-invalid');
-            }
-        } else {
-            if (!field.value) {
-                isValid = false;
-                field.classList.add('is-invalid');
-            } else {
-                field.classList.remove('is-invalid');
-            }
-        }
-    });
-
-    // Submit the form if all required fields have a value
-    if (isValid) {
-        // Get the form values
-        var truck_no = document.getElementById('truck_no').value;
-        var owner = document.getElementById('owner').value;
-        var transporter = document.getElementById('transporter').value;
-        var driver = document.getElementById('driver').value;
-        var ago_comp_1 = document.getElementById('ago_comp_1').value;
-        var ago_comp_2 = document.getElementById('ago_comp_2').value;
-        var ago_comp_3 = document.getElementById('ago_comp_3').value;
-        var pms_1 = document.getElementById('pms_1').value;
-        var pms_2 = document.getElementById('pms_2').value;
-        var pms_3 = document.getElementById('pms_3').value;
-
-        // Get the values of the AGO 4 and PMS 4 input fields
-        var ago_comp_4 = document.getElementById('ago_comp_4').value;
-        var pms_4 = document.getElementById('pms_4').value;
-
-        // Get the values of the AGO 5 and PMS 5 input fields
-        var ago_comp_5 = document.getElementById('ago_comp_5').value;
-        var pms_5 = document.getElementById('pms_5').value;
-
-        // GET THE VALUES OF THE AGO 6 AND PMS 6 INPUT FIELDS
-        var ago_comp_6 = document.getElementById('ago_comp_6').value;
-        var pms_6 = document.getElementById('pms_6').value;
-
-        // Get the currently logged-in user's ID
-        var userId = firebase.auth().currentUser.uid;
-
-        // Save the form values to Firestore
         const db = firebase.firestore();
-        const newTruckRef = db.collection('users').doc(userId).collection('trucks').doc();
+        const auth = firebase.auth();
 
-        await newTruckRef.set({
-            truck_no: truck_no,
-            owner: owner,
-            transporter: transporter,
-            driver: driver,
-            ago_comp_1: parseFloat(ago_comp_1),
-            ago_comp_2: parseFloat(ago_comp_2),
-            ago_comp_3: parseFloat(ago_comp_3),
-            pms_1: parseFloat(pms_1),
-            pms_2: parseFloat(pms_2),
-            pms_3: parseFloat(pms_3),
-            // Include the values of the AGO 4,5,6 and PMS 4,5,6 input fields
-            ago_comp_4: ago_comp_4 ? parseFloat(ago_comp_4) : null,
-            pms_4: pms_4 ? parseFloat(pms_4) : null,
-            ago_comp_5: ago_comp_5 ? parseFloat(ago_comp_5) : null,
-            pms_5: pms_5 ? parseFloat(pms_5) : null,
-            ago_comp_6: ago_comp_6 ? parseFloat(ago_comp_6) : null,
-            pms_6: pms_6 ? parseFloat(pms_6) : null
-        })
-        .then(() => {
-            // Data saved successfully!
-            alert("Data saved successfully!");
-            // Reset the form
-            document.getElementById("new_truck_form").reset();
-            // Reset the text of the submit button
-            submitButton.textContent = "Submit";
-        })
-        .catch(error => {
-            // The write failed...
-            alert("Data could not be saved. " + error);
-            // Reset the text of the submit button
-            submitButton.textContent = "Submit";
-        });
-    } else {
-        // Reset the text of the submit button
-        submitButton.textContent = "Submit";
-    }
-});
-
-        // Get the input fields for AGO and PMS compartments
-        const agoInputs = Array.from(document.querySelectorAll('[id^="ago_comp_"]'));
-        const pmsInputs = Array.from(document.querySelectorAll('[id^="pms_"]'));
-
-        // Get the input fields for AGO and PMS totals
+        // DOM Elements
+        const form = document.getElementById('new_truck_form');
+        const addCompartmentsCheckbox = document.getElementById('add-compartments');
+        const additionalCompartments = document.getElementById('additional-compartments');
         const agoTotalInput = document.getElementById('ago-total');
         const pmsTotalInput = document.getElementById('pms-total');
+        const toggleThemeButton = document.getElementById('toggle-theme');
+        const backButton = document.getElementById('back-button');
+        const modal = document.getElementById('myModal');
 
-        // Add event listeners to the input fields for AGO and PMS compartments
-        agoInputs.forEach(input => {
-            input.addEventListener('input', calculateAgoTotal);
-        });
-        pmsInputs.forEach(input => {
-            input.addEventListener('input', calculatePmsTotal);
+        // Event Listeners
+        form.addEventListener('submit', handleSubmit);
+        addCompartmentsCheckbox.addEventListener('change', toggleAdditionalCompartments);
+        toggleThemeButton.addEventListener('click', toggleTheme);
+        backButton.addEventListener('click', () => window.location.href = 'dashboard.html');
+
+        // Input fields for calculations
+        const agoInputs = ['ago_comp_1', 'ago_comp_2', 'ago_comp_3', 'ago_comp_4', 'ago_comp_5', 'ago_comp_6'];
+        const pmsInputs = ['pms_1', 'pms_2', 'pms_3', 'pms_4', 'pms_5', 'pms_6'];
+
+        agoInputs.concat(pmsInputs).forEach(id => {
+            document.getElementById(id).addEventListener('input', calculateTotals);
         });
 
-        // Calculate the total for AGO compartments
-        function calculateAgoTotal() {
-            let total = 0;
-            agoInputs.forEach(input => {
-                let value = parseFloat(input.value);
-                if (!isNaN(value)) {
-                    total += value;
-                }
+        function toggleAdditionalCompartments() {
+            additionalCompartments.classList.toggle('hidden', !this.checked);
+            const additionalInputs = document.querySelectorAll('#additional-compartments input');
+            additionalInputs.forEach(input => {
+                input.required = this.checked;
             });
-            agoTotalInput.value = total.toFixed(2);
         }
 
-        // Calculate the total for PMS compartments
-        function calculatePmsTotal() {
-            let total = 0;
-            pmsInputs.forEach(input => {
-                let value = parseFloat(input.value);
-                if (!isNaN(value)) {
-                    total += value;
-                }
+        function calculateTotals() {
+            let agoTotal = 0;
+            let pmsTotal = 0;
+
+            agoInputs.forEach(id => {
+                const value = parseFloat(document.getElementById(id).value) || 0;
+                agoTotal += value;
             });
-            pmsTotalInput.value = total.toFixed(2);
+
+            pmsInputs.forEach(id => {
+                const value = parseFloat(document.getElementById(id).value) || 0;
+                pmsTotal += value;
+            });
+
+            agoTotalInput.value = agoTotal.toFixed(2);
+            pmsTotalInput.value = pmsTotal.toFixed(2);
         }
 
-        function goBack() {
-            window.location.href = "dashboard.html";
+        async function handleSubmit(event) {
+            event.preventDefault();
+            const submitButton = form.querySelector('button[type="submit"]');
+            submitButton.textContent = 'Submitting...';
+            submitButton.disabled = true;
+
+            try {
+                const formData = new FormData(form);
+                const truckData = Object.fromEntries(formData.entries());
+
+                // Convert numeric values to floats
+                for (let key in truckData) {
+                    if (key.startsWith('ago_comp_') || key.startsWith('pms_')) {
+                        truckData[key] = parseFloat(truckData[key]) || null;
+                    }
+                }
+
+                const userId = auth.currentUser.uid;
+                await db.collection('users').doc(userId).collection('trucks').add(truckData);
+
+                alert('Truck data saved successfully!');
+                form.reset();
+                calculateTotals();
+            } catch (error) {
+                console.error('Error saving truck data:', error);
+                alert('Failed to save truck data. Please try again.');
+            } finally {
+                submitButton.textContent = 'Submit';
+                submitButton.disabled = false;
+            }
         }
 
         function toggleTheme() {
-            const body = document.body;
-            const cardElements = document.querySelectorAll('.card');
-            const containerElements = document.querySelectorAll('.container');
-            const currentTheme = body.classList.contains('dark') ? 'light' : 'dark';
-
-            body.classList.toggle('dark');
-            cardElements.forEach(function (card) {
-                card.classList.toggle('dark');
-            });
-            containerElements.forEach(function (container) {
-                container.classList.toggle('dark');
-            });
-
-            // Save the current theme to local storage
-            localStorage.setItem('theme', currentTheme);
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
         }
 
-       // Get the current theme from local storage
-const storedTheme = localStorage.getItem('theme');
+        // Particle.js configuration
+        particlesJS("particles-js", {
+            particles: {
+                number: { value: 80, density: { enable: true, value_area: 800 } },
+                color: { value: "#58a6ff" },
+                shape: { type: "circle" },
+                opacity: { value: 0.5, random: false, anim: { enable: false } },
+                size: { value: 3, random: true, anim: { enable: false } },
+                line_linked: { enable: true, distance: 150, color: "#58a6ff", opacity: 0.4, width: 1 },
+                move: { enable: true, speed: 2, direction: "none", random: false, straight: false, out_mode: "out", bounce: false }
+            },
+            interactivity: {
+                detect_on: "canvas",
+                events: { onhover: { enable: true, mode: "repulse" }, onclick: { enable: true, mode: "push" }, resize: true },
+                modes: { repulse: { distance: 100, duration: 0.4 }, push: { particles_nb: 4 } }
+            },
+            retina_detect: true
+        });
 
-if (storedTheme === 'dark') {
-    // Apply the 'dark' class to the body and elements
-    document.body.classList.add('dark');
-    const cardElements = document.querySelectorAll('.card');
-    const containerElements = document.querySelectorAll('.container');
-    cardElements.forEach(function (card) {
-        card.classList.add('dark');
-    });
-    containerElements.forEach(function (container) {
-        container.classList.add('dark');
-    });
-}
-
-// Get the modal
-var modal = document.getElementById("myModal");
-
-// Get the close button
-var close = document.getElementsByClassName("close")[0];
-
-// When the user clicks on the close button, close the modal
-close.onclick = function() {
-    modal.style.display = "none";
-}
-
-// When the user clicks anywhere outside of the modal, close it
-window.onclick = function(event) {
-    if (event.target == modal) {
-        modal.style.display = "none";
-    }
-}
-
+        // Set theme on load
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+        });
     </script>
 </body>
 </html>
