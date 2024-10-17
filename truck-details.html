@@ -134,90 +134,91 @@
         });
 
         async function loadTruckDetails(userId, truckNo) {
-            const truckTitle = document.getElementById('truckTitle');
-            const truckDetailTableBody = document.querySelector('#truckDetailTable tbody');
-            const summaryStats = document.getElementById('summaryStats');
-            truckTitle.textContent = `Truck Details: ${truckNo}`;
-            truckDetailTableBody.innerHTML = '';
-            summaryStats.innerHTML = '';
+    const truckTitle = document.getElementById('truckTitle');
+    const truckDetailTableBody = document.querySelector('#truckDetailTable tbody');
+    const summaryStats = document.getElementById('summaryStats');
+    truckTitle.textContent = `Truck Details: ${truckNo}`;
+    truckDetailTableBody.innerHTML = '';
+    summaryStats.innerHTML = '';
 
-            try {
-                const querySnapshot = await db.collection('users').doc(userId)
-                    .collection('userReports')
-                    .where('truckNo', '==', truckNo)
-                    .get();
+    try {
+        const querySnapshot = await db.collection('users').doc(userId)
+            .collection('userReports')
+            .where('truckNo', '==', truckNo)
+            .get();
 
-                const trips = [];
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    trips.push({
-                        date: data.date.toDate(),
-                        product: data.product,
-                        vol20: data.vol20,
-                        offload1: data.offload1 || 0,
-                        offload2: data.offload2 || 0,
-                        offload3: data.offload3 || 0,
-                        totalOffloaded: (data.offload1 || 0) + (data.offload2 || 0) + (data.offload3 || 0),
-                        shortage: data.vol20 - ((data.offload1 || 0) + (data.offload2 || 0) + (data.offload3 || 0)),
-                        offloadPoints: data.offloadPoints || [] // Retrieve offload points
-                    });
-                });
+        const trips = [];
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const totalOffloaded = (data.offload1 || 0) + (data.offload2 || 0) + (data.offload3 || 0);
+            const shortage = totalOffloaded - data.vol20;
+            trips.push({
+                date: data.date.toDate(),
+                product: data.product,
+                vol20: data.vol20,
+                offload1: data.offload1 || 0,
+                offload2: data.offload2 || 0,
+                offload3: data.offload3 || 0,
+                totalOffloaded: totalOffloaded,
+                shortage: shortage
+            });
+        });
 
-                // Sort trips by date (most recent first)
-                trips.sort((a, b) => b.date - a.date);
+        // Sort trips by date (most recent first)
+        trips.sort((a, b) => b.date - a.date);
 
-                // Calculate summary statistics
-                const totalTrips = trips.length;
-                const totalShortages = trips.filter(trip => trip.shortage > 0).length;
-                const totalPositiveShortages = trips.filter(trip => trip.shortage < 0).length;
-                const moreShortages = totalShortages > totalPositiveShortages ? 'more' : 'few';
+        // Calculate summary statistics
+        const totalTrips = trips.length;
+        const totalPositiveShortages = trips.filter(trip => trip.shortage > 0).length;
+        const totalNegativeShortages = trips.filter(trip => trip.shortage < 0).length;
+        const moreShortages = totalNegativeShortages > totalPositiveShortages ? 'more' : 'few';
 
-                const recentTrend = moreShortages === 'more' ? 'up' : 'down';
+        const recentTrend = moreShortages === 'more' ? 'up' : 'down';
 
-                // Display summary statistics with trend explanation
-                summaryStats.innerHTML = `
-                    <h4>Summary Statistics (Monthly)</h4>
-                    <p><strong>Total Trips:</strong> ${totalTrips}</p>
-                    <p><strong>Total Positive Shortages:</strong> ${totalPositiveShortages}</p>
-                    <p><strong>Total Shortages:</strong> ${totalShortages}</p>
-                    <p><strong>Trend:</strong> 
-                        <span class="trend-${recentTrend}">
-                            ${recentTrend === 'up' ? '↑ More Shortages' : '↓ Fewer Shortages'}
-                        </span> (${totalShortages} out of ${totalTrips} trips have shortages)
-                    </p>
-                    <p class="trend-info">
-                        The trend indicates whether there are more trips with shortages or more trips where offloading exceeds expectations.
-                        An ↑ means more shortages, while a ↓ means fewer shortages.
-                    </p>
-                `;
+        // Display summary statistics with trend explanation
+        summaryStats.innerHTML = `
+            <h4>Summary Statistics (Monthly)</h4>
+            <p><strong>Total Trips:</strong> ${totalTrips}</p>
+            <p><strong>Total Positive Shortages:</strong> ${totalPositiveShortages}</p>
+            <p><strong>Total Negative Shortages:</strong> ${totalNegativeShortages}</p>
+            <p><strong>Trend:</strong> 
+                <span class="trend-${recentTrend}">
+                    ${recentTrend === 'up' ? '↑ More Shortages' : '↓ Fewer Shortages'}
+                </span> (${totalNegativeShortages} out of ${totalTrips} trips have shortages)
+            </p>
+            <p class="trend-info">
+                The trend indicates whether there are more trips with shortages or more trips where offloading exceeds expectations.
+                An ↑ means more shortages, while a ↓ means fewer shortages.
+            </p>
+        `;
 
-                // Populate table with trip details
-                trips.forEach((trip) => {
-                    const row = truckDetailTableBody.insertRow();
+        // Populate table with trip details
+        trips.forEach((trip) => {
+            const row = truckDetailTableBody.insertRow();
 
-                    const totalOffloaded = trip.totalOffloaded || '-';
-                    const shortageValue = trip.shortage > 0 
-                        ? `+${trip.shortage.toFixed(2)}` // Positive shortage indicates more offloaded than expected
-                        : `${trip.shortage.toFixed(2)}`; // Negative shortage indicates less offloaded (potential loss)
+            const shortageValue = trip.shortage > 0 
+                ? `+ ${trip.shortage.toFixed(2)}` 
+                : `- ${Math.abs(trip.shortage).toFixed(2)}`;
 
-                    row.innerHTML = `
-                        <td>${trip.date.toLocaleDateString()}</td>
-                        <td>${trip.product}</td>
-                        <td>${trip.vol20}</td>
-                        <td>${trip.offload1 || '-'}</td>
-                        <td>${trip.offload2 || '-'}</td>
-                        <td>${trip.offload3 || '-'}</td>
-                        <td>${totalOffloaded}</td>
-                        <td>${shortageValue}</td>
-                    `;
-                });
+            row.innerHTML = `
+                <td>${trip.date.toLocaleDateString()}</td>
+                <td>${trip.product}</td>
+                <td>${trip.vol20}</td>
+                <td>${trip.offload1 || '-'}</td>
+                <td>${trip.offload2 || '-'}</td>
+                <td>${trip.offload3 || '-'}</td>
+                <td>${trip.totalOffloaded}</td>
+                <td>${shortageValue}</td>
+            `;
+        });
 
-            } catch (error) {
-                console.error("Error loading truck details: ", error);
-                truckDetailTableBody.innerHTML = '<tr><td colspan="8" class="text-center">Error loading truck details. Please try again later.</td></tr>';
-                summaryStats.innerHTML = '<p class="text-center">Error loading summary statistics.</p>';
-            }
-        }
+    } catch (error) {
+        console.error("Error loading truck details: ", error);
+        truckDetailTableBody.innerHTML = '<tr><td colspan="8" class="text-center">Error loading truck details. Please try again later.</td></tr>';
+        summaryStats.innerHTML = '<p class="text-center">Error loading summary statistics.</p>';
+    }
+}
+
 
         // Initialize Particles.js
         particlesJS("particles-js", {
