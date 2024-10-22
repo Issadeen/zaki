@@ -178,276 +178,58 @@
 
             if (!file.name.match(/\.(xlsx|xls)$/)) {
                 alert("Please select a valid Excel file (.xlsx or .xls)");
-                return;
-            }
-
-            const reader = new FileReader();
-
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-
-                    if (workbook.SheetNames.length === 0) {
-                        throw new Error("The Excel file is empty.");
-                    }
-
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const sheetData = XLSX.utils.sheet_to_json(firstSheet);
-
-                    if (sheetData.length === 0) {
-                        throw new Error("No data found in the Excel sheet.");
-                    }
-
-                    console.log("Parsed Excel data:", sheetData);
-                    submitDataToFirebase(sheetData);
-                } catch (error) {
-                    console.error("Error processing Excel file:", error);
-                    alert("Error processing Excel file: " + error.message);
+                returncolor: { value: "#58a6ff" },
+                shape: {
+                    type: "circle",
+                    stroke: { width: 0, color: "#000000" },
+                    polygon: { nb_sides: 5 },
+                    image: { src: "", width: 100, height: 100 }
+                },
+                opacity: {
+                    value: 0.5,
+                    random: false,
+                    anim: { enable: false, speed: 1, opacity_min: 0.1, sync: false }
+                },
+                size: {
+                    value: 3,
+                    random: true,
+                    anim: { enable: false, speed: 40, size_min: 0.1, sync: false }
+                },
+                line_linked: {
+                    enable: true,
+                    distance: 150,
+                    color: "#58a6ff",
+                    opacity: 0.4,
+                    width: 1
+                },
+                move: {
+                    enable: true,
+                    speed: 6,
+                    direction: "none",
+                    random: false,
+                    straight: false,
+                    out_mode: "out",
+                    bounce: false,
+                    attract: { enable: false, rotateX: 600, rotateY: 1200 }
                 }
-            };
-
-            reader.onerror = function(ex) {
-                console.error("File reading failed:", ex);
-                alert("File reading failed. Please try again.");
-            };
-
-            reader.readAsArrayBuffer(file);
-        }
-
-        async function submitDataToFirebase(sheetData) {
-            const db = firebase.firestore();
-            const userId = firebase.auth().currentUser.uid;
-
-            let successCount = 0;
-            let errorCount = 0;
-
-            try {
-                for (const row of sheetData) {
-                    if (!validateRow(row)) {
-                        errorCount++;
-                        continue;
-                    }
-
-                    let dateValue = row['DATE'];
-                    let parsedDate = parseDate(dateValue);
-
-                    if (!parsedDate) {
-                        console.error("Invalid date:", dateValue);
-                        errorCount++;
-                        continue;
-                    }
-
-                    await db.collection('users').doc(userId).collection('userReports').add({
-                        date: parsedDate,
-                        truckNo: row['TRUCK NO'],
-                        orderNo: row['ORDER NO'],
-                        loadingDepot: row['LOADING DEPOT'],
-                        customerName: row['CUSTOMERS NAME'],
-                        product: row['PRODUCT'],
-                        volObs: row['VOL @OBS'],
-                        vol20: row['VOL @20']
-                    });
-
-                    successCount++;
-                }
-
-                alert(`Data saved successfully. ${successCount} rows processed, ${errorCount} rows skipped due to errors.`);
-            } catch (error) {
-                console.error("Error saving data:", error);
-                alert("Error saving data: " + error.message);
-            }
-        }
-
-        function validateRow(row) {
-            const requiredFields = ['DATE', 'Product', 'Loading Depot', "Customer's Name", 'Truck No', 'Vol @OBS', 'Vol @20', 'Order No'];
-            for (const field of requiredFields) {
-                if (row[field] === undefined) {
-                    console.error(`Missing required field: ${field}`);
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        function parseDate(dateValue) {
-            if (typeof dateValue === 'number') {
-                const excelEpoch = new Date(1899, 11, 30);
-                const millisPerDay = 24 * 60 * 60 * 1000;
-                return new Date(excelEpoch.getTime() + dateValue * millisPerDay);
-            } else if (typeof dateValue === 'string') {
-                const [day, month, year] = dateValue.split('-');
-                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                const monthIndex = monthNames.indexOf(month);
-                
-                if (monthIndex === -1) {
-                    console.error("Invalid month in date:", dateValue);
-                    return null;
-                }
-
-                const fullYear = 2000 + parseInt(year, 10);
-                return new Date(fullYear, monthIndex, parseInt(day, 10));
-            } else {
-                console.error("Invalid date value:", dateValue);
-                return null;
-            }
-        }
-
-        function showResultModal(successCount, errorCount, errorMessages) {
-            const modal = document.getElementById('resultModal');
-            const modalContent = document.getElementById('resultModalContent');
-            const closeBtn = document.getElementsByClassName('close')[0];
-
-            let content = `
-                <h2>Upload Results</h2>
-                <p>Successfully processed: ${successCount} rows</p>
-                <p>Errors encountered: ${errorCount} rows</p>
-            `;
-
-            if (errorCount > 0) {
-                content += `
-                    <h3>Error Details:</h3>
-                    <ul>
-                        ${errorMessages.map(msg => `<li>${msg}</li>`).join('')}
-                    </ul>
-                `;
-            }
-
-            content += `
-                <button onclick="closeModal()">Close</button>
-                <button onclick="downloadErrorReport()">Download Error Report</button>
-            `;
-
-            modalContent.innerHTML = content;
-            modal.style.display = "block";
-
-            closeBtn.onclick = function() {
-                modal.style.display = "none";
-            }
-
-            window.onclick = function(event) {
-                if (event.target == modal) {
-                    modal.style.display = "none";
-                }
-            }
-        }
-
-        function showErrorModal(message) {
-            const modal = document.getElementById('resultModal');
-            const modalContent = document.getElementById('resultModalContent');
-            const closeBtn = document.getElementsByClassName('close')[0];
-
-            modalContent.innerHTML = `
-                <h2>Error</h2>
-                <p>${message}</p>
-                <button onclick="closeModal()">Close</button>
-            `;
-
-            modal.style.display = "block";
-
-            closeBtn.onclick = function() {
-                modal.style.display = "none";
-            }
-
-            window.onclick = function(event) {
-                if (event.target == modal) {
-                    modal.style.display = "none";
-                }
-            }
-        }
-
-        function closeModal() {
-            document.getElementById('resultModal').style.display = "none";
-        }
-
-        function downloadErrorReport() {
-            console.log("Downloading error report...");
-        }
-
-        document.getElementsByClassName('close')[0].addEventListener('click', () => {
-            document.getElementById('myModal').style.display = "none";
-        });
-
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('myModal')) {
-                document.getElementById('myModal').style.display = "none";
-            }
-        };
-
-        let timeout;
-
-        function startTimer() {
-            timeout = setTimeout(() => {
-                document.getElementById('myModal').style.display = "block";
-            }, 300000); // 5 minutes
-        }
-
-        function resetTimer() {
-            clearTimeout(timeout);
-            startTimer();
-        }
-
-        startTimer();
-
-        document.addEventListener('mousemove', resetTimer);
-        document.addEventListener('keypress', resetTimer);
-
-        document.getElementById('reportForm').addEventListener('submit', async (e) => {
-            e.preventDefault(); 
-
-            const dateString = document.getElementById('date').value;
-            const truckNo = document.getElementById('truckNo').value;
-            const orderNo = document.getElementById('orderNo').value;
-            const loadingDepot = document.getElementById('loadingDepot').value;
-            const customerName = document.getElementById('customerName').value;
-            const product = document.getElementById('product').value;
-            const volObs = document.getElementById('volObs').value;
-            const vol20 = document.getElementById('vol20').value;
-
-            if (dateString && truckNo && orderNo && loadingDepot && customerName && product && volObs && vol20) {
-                try {
-                    const db = firebase.firestore(); 
-                    const userId = firebase.auth().currentUser.uid;
-
-                    await db.collection('users').doc(userId).collection('userReports').add({
-                        date: new Date(dateString),
-                        truckNo: truckNo,
-                        orderNo: orderNo,
-                        loadingDepot: loadingDepot,
-                        customerName: customerName,
-                        product: product,
-                        volObs: volObs,
-                        vol20: vol20
-                    });
-
-                    console.log("Report saved successfully.");
-                    alert("Report saved successfully.");
-                    document.getElementById('reportForm').reset();
-                } catch (error) {
-                    console.error("Error saving report: ", error);
-                    alert("Error saving report: " + error.message);
-                }
-            } else {
-                alert("Please fill out the form or upload an Excel file.");
-            }
-        });
-
-        // Particle.js configuration
-        particlesJS("particles-js", {
-            particles: {
-                number: { value: 80, density: { enable: true, value_area: 800 } },
-                color: { value: "#58a6ff" },
-                shape: { type: "circle" },
-                opacity: { value: 0.5, random: false, anim: { enable: false } },
-                size: { value: 3, random: true, anim: { enable: false } },
-                line_linked: { enable: true, distance: 150, color: "#58a6ff", opacity: 0.4, width: 1 },
-                move: { enable: true, speed: 2, direction: "none", random: false, straight: false, out_mode: "out", bounce: false }
             },
             interactivity: {
                 detect_on: "canvas",
-                        events: { onhover: { enable: true, mode: "repulse" }, onclick: { enable: true, mode: "push" }, resize: true }
-                    }
-                });
+                events: {
+                    onhover: { enable: true, mode: "repulse" },
+                    onclick: { enable: true, mode: "push" },
+                    resize: true
+                },
+                modes: {
+                    grab: { distance: 400, line_linked: { opacity: 1 } },
+                    bubble: { distance: 400, size: 40, duration: 2, opacity: 8, speed: 3 },
+                    repulse: { distance: 200, duration: 0.4 },
+                    push: { particles_nb: 4 },
+                    remove: { particles_nb: 2 }
+                }
+            },
+            retina_detect: true
+        });
     </script>
 </body>
 </html>
