@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+</head>
+<body>
+    <script>
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+        
+        // Define headers
+        const headers = [
+            'DATE',
+            'TRUCK NO',
+            'ORDER NO',
+            'LOADING DEPOT',
+            'CUSTOMERS NAME',
+            'PRODUCT',
+            'VOL @OBS',
+            'VOL @20'
+        ];
+        
+        // Add example row
+        const exampleData = [
+            '15-Jan-24',
+            'TRK001',
+            'ORD123',
+            'Depot A',
+            'Customer ABC',
+            'Diesel',
+            1000,
+            980
+        ];
+        
+        // Create worksheet with headers and example row
+        const ws = XLSX.utils.aoa_to_sheet([headers, exampleData]);
+        
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(wb, ws, 'Template');
+        
+        // Generate download
+        XLSX.writeFile(wb, 'template.xlsx');
+    </script>
+    <p>Your template download should begin automatically. If it doesn't, please check your browser's download settings.</p>
+</body>
+</html>
