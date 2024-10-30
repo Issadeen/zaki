@@ -310,10 +310,33 @@
             const tr = table.getElementsByTagName('tr');
 
             for (let i = 1; i < tr.length; i++) {
-                const td =   tr[i].getElementsByTagName('td')[2];
-                if (td) {
-                    const textValue = td.textContent || td.innerText;
-                    if (textValue.toUpperCase().indexOf(filter) > -1) {
+                const tdDate = tr[i].getElementsByTagName('td')[2];
+                const tdTruckNo = tr[i].getElementsByTagName('td')[3];
+                const tdOrderNo = tr[i].getElementsByTagName('td')[4];
+                const tdLoadingDepot = tr[i].getElementsByTagName('td')[5];
+                const tdCustomerName = tr[i].getElementsByTagName('td')[6];
+                const tdProduct = tr[i].getElementsByTagName('td')[7];
+                const tdVolObs = tr[i].getElementsByTagName('td')[8];
+                const tdVol20 = tr[i].getElementsByTagName('td')[9];
+
+                if (tdDate || tdTruckNo || tdOrderNo || tdLoadingDepot || tdCustomerName || tdProduct || tdVolObs || tdVol20) {
+                    const textValueDate = tdDate.textContent || tdDate.innerText;
+                    const textValueTruckNo = tdTruckNo.textContent || tdTruckNo.innerText;
+                    const textValueOrderNo = tdOrderNo.textContent || tdOrderNo.innerText;
+                    const textValueLoadingDepot = tdLoadingDepot.textContent || tdLoadingDepot.innerText;
+                    const textValueCustomerName = tdCustomerName.textContent || tdCustomerName.innerText;
+                    const textValueProduct = tdProduct.textContent || tdProduct.innerText;
+                    const textValueVolObs = tdVolObs.textContent || tdVolObs.innerText;
+                    const textValueVol20 = tdVol20.textContent || tdVol20.innerText;
+
+                    if (textValueDate.toUpperCase().indexOf(filter) > -1 ||
+                        textValueTruckNo.toUpperCase().indexOf(filter) > -1 ||
+                        textValueOrderNo.toUpperCase().indexOf(filter) > -1 ||
+                        textValueLoadingDepot.toUpperCase().indexOf(filter) > -1 ||
+                        textValueCustomerName.toUpperCase().indexOf(filter) > -1 ||
+                        textValueProduct.toUpperCase().indexOf(filter) > -1 ||
+                        textValueVolObs.toUpperCase().indexOf(filter) > -1 ||
+                        textValueVol20.toUpperCase().indexOf(filter) > -1) {
                         tr[i].style.display = '';
                     } else {
                         tr[i].style.display = 'none';
