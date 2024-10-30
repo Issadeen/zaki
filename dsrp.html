@@ -64,10 +64,15 @@
                 <input type="text" id="search" placeholder="Search for reports..." class="w-full px-4 py-2 bg-custom-dark-secondary border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-custom-accent">
             </div>
 
+            <div class="mb-4">
+                <button id="deleteSelected" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-300">Delete Selected</button>
+            </div>
+
             <div class="overflow-x-auto">
                 <table id="reportTable" class="w-full border-collapse hidden">
                     <thead>
                         <tr class="bg-custom-dark-secondary text-custom-accent">
+                            <th class="p-3 text-left"><input type="checkbox" id="selectAll"></th>
                             <th class="p-3 text-left">#</th>
                             <th class="p-3 text-left">Date</th>
                             <th class="p-3 text-left">Truck No</th>
@@ -188,6 +193,7 @@
                     row.classList.add('border-t', 'border-gray-700');
 
                     row.innerHTML = `
+                        <td class="p-3"><input type="checkbox" class="selectRow"></td>
                         <td class="p-3">${index++}</td>
                         <td class="p-3">${dateString}</td>
                         <td class="p-3">${data.truckNo}</td>
@@ -271,6 +277,32 @@
             }
         }
 
+        function deleteSelectedRows() {
+            const selectedRows = document.querySelectorAll('.selectRow:checked');
+            const enteredEmail = prompt("Please enter your email:");
+            const currentUserEmail = firebase.auth().currentUser.email;
+
+            if (enteredEmail === currentUserEmail) {
+                selectedRows.forEach((checkbox) => {
+                    const row = checkbox.closest('tr');
+                    const docId = row.getAttribute('data-id');
+
+                    if (docId) {
+                        db.collection('users').doc(firebase.auth().currentUser.uid).collection('userReports').doc(docId).delete().then(() => {
+                            console.log("Document successfully deleted!");
+                            row.remove();
+                        }).catch((error) => {
+                            console.error("Error removing document: ", error);
+                        });
+                    } else {
+                        console.error("No document ID found for deletion.");
+                    }
+                });
+            } else {
+                alert("Incorrect email. The rows will not be deleted.");
+            }
+        }
+
         function searchReports() {
             const input = document.getElementById('search');
             const filter = input.value.toUpperCase();
@@ -316,6 +348,19 @@
         // Search functionality
         const searchInput = document.getElementById('search');
         searchInput.addEventListener('input', searchReports);
+
+        // Select all functionality
+        const selectAllCheckbox = document.getElementById('selectAll');
+        selectAllCheckbox.addEventListener('change', (event) => {
+            const checkboxes = document.querySelectorAll('.selectRow');
+            checkboxes.forEach((checkbox) => {
+                checkbox.checked = event.target.checked;
+            });
+        });
+
+        // Delete selected rows functionality
+        const deleteSelectedButton = document.getElementById('deleteSelected');
+        deleteSelectedButton.addEventListener('click', deleteSelectedRows);
 
         // Initialize the page
         firebase.auth().onAuthStateChanged(async (user) => {
