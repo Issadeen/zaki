@@ -288,8 +288,17 @@
             const searchValue = searchInput.value.toLowerCase();
             const dataCards = dataCardsContainer.getElementsByTagName("div");
             Array.from(dataCards).forEach(card => {
-                const truckNo = card.getAttribute("data-truck-no").toLowerCase();
-                card.style.display = truckNo.includes(searchValue) ? "" : "none";
+                let found = false;
+                const elements = card.getElementsByTagName('*');
+                for (let i = 0; i < elements.length; i++) {
+                    const element = elements[i];
+                    const textValue = element.textContent || element.innerText;
+                    if (textValue.toLowerCase().indexOf(searchValue) > -1) {
+                        found = true;
+                        break;
+                    }
+                }
+                card.style.display = found ? "" : "none";
             });
         });
 
