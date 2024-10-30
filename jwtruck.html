@@ -293,6 +293,16 @@
             });
         });
 
+        // Add event listener to the search input field to filter truck details in real-time
+        searchInput.addEventListener("input", () => {
+            const searchValue = searchInput.value.toLowerCase();
+            const dataCards = dataCardsContainer.getElementsByClassName("data-card");
+            Array.from(dataCards).forEach(card => {
+                const truckNo = card.getAttribute("data-truck-no").toLowerCase();
+                card.style.display = truckNo.includes(searchValue) ? "" : "none";
+            });
+        });
+
         // Toggle theme
         toggleButton.addEventListener("click", () => {
             document.documentElement.classList.toggle('dark');
