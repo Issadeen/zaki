@@ -310,15 +310,19 @@
             const tr = table.getElementsByTagName('tr');
 
             for (let i = 1; i < tr.length; i++) {
-                const td =   tr[i].getElementsByTagName('td')[2];
-                if (td) {
-                    const textValue = td.textContent || td.innerText;
-                    if (textValue.toUpperCase().indexOf(filter) > -1) {
-                        tr[i].style.display = '';
-                    } else {
-                        tr[i].style.display = 'none';
+                let found = false;
+                const tds = tr[i].getElementsByTagName('td');
+                for (let j = 0; j < tds.length; j++) {
+                    const td = tds[j];
+                    if (td) {
+                        const textValue = td.textContent || td.innerText;
+                        if (textValue.toUpperCase().indexOf(filter) > -1) {
+                            found = true;
+                            break;
+                        }
                     }
                 }
+                tr[i].style.display = found ? '' : 'none';
             }
         }
 
