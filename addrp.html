@@ -672,37 +672,45 @@
 
                     const db = firebase.firestore(); 
 
-                    const userId = firebase.auth().currentUser.uid;
+                    const user = firebase.auth().currentUser;
 
+                    if (user) {
 
+                        const userId = user.uid;
 
-                    await db.collection('users').doc(userId).collection('userReports').add({
+                        await db.collection('users').doc(userId).collection('userReports').add({
 
-                        date: new Date(dateString),
+                            date: new Date(dateString),
 
-                        truckNo: truckNo,
+                            truckNo: truckNo,
 
-                        orderNo: orderNo,
+                            orderNo: orderNo,
 
-                        loadingDepot: loadingDepot,
+                            loadingDepot: loadingDepot,
 
-                        customerName: customerName,
+                            customerName: customerName,
 
-                        product: product,
+                            product: product,
 
-                        volObs: volObs,
+                            volObs: volObs,
 
-                        vol20: vol20
+                            vol20: vol20
 
-                    });
+                        });
 
+                        console.log("Report saved successfully.");
 
+                        alert("Report saved successfully.");
 
-                    console.log("Report saved successfully.");
+                        document.getElementById('reportForm').reset();
 
-                    alert("Report saved successfully.");
+                    } else {
 
-                    document.getElementById('reportForm').reset();
+                        console.error("User is not authenticated.");
+
+                        alert("User is not authenticated. Please log in again.");
+
+                    }
 
                 } catch (error) {
 
